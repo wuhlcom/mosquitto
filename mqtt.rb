@@ -27,7 +27,6 @@ class MqClient
 	#   cid,client id
 	#   args,client attribudes
 	def clientobj(host,cid=nil,args={})
-	  fail 'topic must be string Array' unless topic.kind_of?(Array)
 	  client= MQTT::Client.new
 	  client.host=host
 	  client.client_id=cid.to_s unless cid.nil?
@@ -46,6 +45,7 @@ class MqClient
 	#   cid,client id
 	#   args,client attribudes
 	def client_sub_msg(host,topic,cid=nil,args={})
+	  fail 'topic must be string Array' unless topic.kind_of?(Array)
 	  client= clientobj(host,cid,args)
 	  puts "mqtt client '#{client.client_id}' conneted"
 	  client.subscribe(topic.join(","))
@@ -63,6 +63,7 @@ class MqClient
 	#   cid,client id
 	#   args,client attribudes
 	def client_pub_msg(host,topic,msg="",cid=nil,retain=false,qos=0,args={})
+	  fail 'topic must be string Array' unless topic.kind_of?(Array)
 	  client = clientobj(host,cid,args)
 	  client.publish(topic,msg,retain,qos)
 	end

@@ -1,6 +1,7 @@
 require './mqtt.rb'
-num=10
+num=1000
 host="localhost"
+host="192.168.10.188"
 topic_arr=["only you"]
 cid = "12345"
 mqtt=MqClient.new
@@ -9,7 +10,7 @@ Thread.abort_on_exception=true
 threads=[]
 
 num.times do |i|
- puts "thread #{i}"
+# puts "thread #{i}"
  p cid="Fest_#{i}"
  thr= Thread.new() do 	
 	mqtt.client_sub_msg(host,topic_arr,cid)
