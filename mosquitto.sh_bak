@@ -1,0 +1,21 @@
+#!/bin/sh
+
+Number=10000
+j=0
+for i in `seq 1 $Number`
+do
+	mosquitto_sub -t sensortopicpc166zyk$i -h 192.168.10.188 -q $j -i clientidpc166zyk$i &
+	j=`expr $j + 1`
+	if [ $j -ge 3 ]; then
+		j=0
+	fi	
+done
+
+while true 
+do
+	for i in `seq 1 $Number`
+	do
+		mosquitto_pub -t sensortopicpc166zyk$i -m PC166testzyk$i -h 192.168.10.188 -i pubidpc166zyk$i  -q 2 
+		sleep 1
+	done
+done

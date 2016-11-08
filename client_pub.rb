@@ -1,7 +1,6 @@
  require './mqtt.rb'
-num=10
 host="localhost"
-host="192.168.10.188"
+#host="192.168.10.188"
 cid = "67890"
 topic="only you"
 msg = "is a SB"

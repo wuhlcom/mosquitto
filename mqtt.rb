@@ -63,7 +63,6 @@ class MqClient
 	#   cid,client id
 	#   args,client attribudes
 	def client_pub_msg(host,topic,msg="",cid=nil,retain=false,qos=0,args={})
-	  fail 'topic must be string Array' unless topic.kind_of?(Array)
 	  client = clientobj(host,cid,args)
 	  client.publish(topic,msg,retain,qos)
 	end
