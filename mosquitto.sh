@@ -1,8 +1,8 @@
 #!/bin/sh
 
-number=10000
+number=25000
 j=0
-host=192.168.10.188
+host=192.168.10.103
 for i in `seq 1 $number`
 do	
 	topic="sensortopicpc166$i"
@@ -17,14 +17,14 @@ do
 	fi	
 done
 
-while true 
-do
-	for i in `seq 1 $number`
-	do
-		topic="sensortopicpc166$i"
-		id="pubidpc166$i"
-		msg="PC166testMSG$i"
-		mosquitto_pub -t $topic -m $msg -h $host -i $id  -q 2 
-		sleep 1
-	done
-done
+#while true 
+#do
+#	for i in `seq 1 $number`
+#	do
+#		topic="sensortopicpc166$i"
+#		id="pubidpc166$i"
+#		msg="PC166testMSG$i"
+#		mosquitto_pub -t $topic -m $msg -h $host -i $id  -q 2 
+#		sleep 1
+#	done
+#done
