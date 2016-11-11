@@ -1,0 +1,55 @@
+[==============20161111165403========================]
+mem total:16038 used:15624 free:157
+swap total:16371 used:179 free:16192
+mqtt session:
+31712 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31748 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31784 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31820 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31856 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31892 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+31928 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:157
+swap total:16371 used:179 free:16192
+mqtt session:
+31964 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15625 free:156
+swap total:16371 used:179 free:16192
+mqtt session:
+32000 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15624 free:157
+swap total:16371 used:179 free:16192
+mqtt session:
+32037 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
+[==============20161111165403========================]
+mem total:16038 used:15624 free:157
+swap total:16371 used:179 free:16192
+mqtt session:
+32073 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access
