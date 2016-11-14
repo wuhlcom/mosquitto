@@ -55,9 +55,8 @@ srvlogerrpath=${srvlogsdir}/${srvlogerr}
 
 createlog()
 {
- #newdate=$(date -d "$logft" +"[%Y-%m-%d %H:%M:%S]")
- #echo $newdate>>$srvlogpath
- echo "[==============$logft========================]">>$srvlogpath
+ logt=`logtime`
+ echo "[==============$logt========================]">>$srvlogpath
  minfo=`meminfo`
  sinfo=`swapinfo`
  echo $minfo>>$srvlogpath
@@ -71,5 +70,5 @@ createlog()
 while true
 do
 	createlog
-        sleep 5	
+        sleep 300	
 done

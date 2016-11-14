@@ -7,23 +7,47 @@
 #  enum,end number
 #  host,mqtt server ip or domain
 #
-snum=1
-enum=10000
+#source client_monitor.sh
+if [ -z $1 ];then
+  host=192.168.10.188
+else
+  host=$1
+fi
+
+if [ -z $2 ];then
+  port=1883
+else
+  port=$2
+fi
+
+if [ -z $3 ];then
+  snum=1
+else
+  snum=$3
+fi
+
+if [ -z $4 ];then
+  enum=10
+else
+  enum=$4
+fi
+
 j=0
-host=192.168.10.103
 for i in `seq $snum $enum`
 do	
 	topic="sensortopicpc166$i"
 	id="clientidpc166$i"
-	#mosquitto_sub -t sensortopicpc166zyk$i -h 192.168.10.188 -q $j -i clientidpc166zyk$i &
 	mosquitto_sub -t $topic -h $host -q $j -i $id -k 120&
 	echo client  \'$id\' sub topic \'$topic\'
-	#|tee -a ~/mosquitto/sub.log
 	j=`expr $j + 1`
 	if [ $j -ge 3 ]; then
 		j=0
 	fi	
 done
+
+#source client_monitor.sh
+#client logs
+sudo ./client_monitor.sh report&
 
 while true 
 do
