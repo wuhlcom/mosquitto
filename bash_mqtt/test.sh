@@ -22,13 +22,9 @@ funtion2(){
 #source client_monitor.sh
 #report&
 
-source log.sh
-
-for i in `seq 1 10`
-do 
-write_log "test" 
-#info=`meminfo`
-#write_log "$info"
+source logger.sh
+cpu=`top_cpu`
+echo $cpu
+#write_log "test" 
 write_mqtt_log 
-done
 

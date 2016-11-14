@@ -3,7 +3,6 @@ curr_path=`pwd`
 logpath=$curr_path/clogs/
 currenttime=`date "+%Y%m%d%H%M%S"`
 fileSize=81920
-logmessage=$2
 logfilename=""
 
 if [ -z $1 ];then
@@ -19,13 +18,13 @@ else
 fi
 
 top_cpu() {
- cpu=`top -n 1|grep -i "Cpu"`
- echo  ${cpu}
+ cpuinf=`top -n 1|grep "Cpu"`
+ echo  ${cpuinf}
 }
 
 top_mem() {
- me=`top -n 1|grep -i "Mem"`
- echo  ${me}
+ memin=`top -n 1|grep "Mem"`
+ echo  ${memin}
 }
 
 meminfo() {
@@ -55,12 +54,12 @@ mqttinfo(){
 
 createpath (){
  #create log file dir
- test -d $clogsdir||mkdir $clogsdir
+ test -d $logpath||mkdir $logpath
  }
 
 createfile()
 {
-	createpath
+    createpath
     getLastLogFileName $logpath
     filename=$logfilename
     isNeedNewFile $filename 
