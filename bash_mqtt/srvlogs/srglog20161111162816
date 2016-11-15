@@ -1,4 +1,0 @@
-minfo
-sinfo
-session_num:
-31234 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access

@@ -1,4 +1,0 @@
-mem total:16038 used:15622 free:161
-swap total:16371 used:179 free:16192
-mqtt session:
-31321 pts/0    S+     0:00 grep dispatch\|topicroute\|mqtt_process\|access

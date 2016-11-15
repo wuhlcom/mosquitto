@@ -1,11 +1,11 @@
 #!/bin/bash
 curr_path=`pwd`
-logpath=$curr_path/clogs/
+logpath=$curr_path/logs/
 currenttime=`date "+%Y%m%d%H%M%S"`
 fileSize=81920
 logfilename=""
 if [ -z $1 ];then
-  srv_ip=192.168.10.103
+  srv_ip=192.168.10.188
 else
   srv_ip=$1
 fi
@@ -15,7 +15,15 @@ if [ -z $2 ];then
 else
   srv_port=$2
 fi
-loggap=10
+
+if [ -z $3 ];then
+  loggap=10
+else
+  loggap=$3
+fi
+
+client_ip=192.168.10.
+
 top_cpu() {
  cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
@@ -50,6 +58,22 @@ mqttinfo(){
   mqttinf="process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
  }
+
+srv_mqttinfo(){
+ srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep ESTABLISHED|wc -l)
+ srv="mqtt sesion num $srv_session"
+ echo ${srv}
+}
+
+srv_mqtt(){
+ proc=$(ps -ef|grep -i "dispatch\|topicroute\|mqtt_process\|access")
+ echo ${proc}
+}
+
+srv_jps(){
+ jps=$(sudo jps)
+ echo -e ${jps} 
+}
 
 createpath (){
  #create log file dir
@@ -135,6 +159,15 @@ write_mqtt_log(){
 	write_log "$msg3"
 	write_log "$msg4"
 }
+
+write_srv_log(){
+	srv1=`srv_mqttinfo`
+	srv2=`srv_mqtt`
+	srv3=`srv_jps`
+	write_log "$srv1"
+	write_log "$srv2"
+	write_log "$srv3"
+}
  
 monitor_log(){
 	while true
@@ -143,7 +176,22 @@ monitor_log(){
 	  p_num=`ps -ef | grep mosquitto_sub|wc -l`
 	  s_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
 	  if [ "$p_num" -eq 0 ] ||[ "$s_num" -eq 0 ]; then
-	    echo "process num $p_num,session number $s_num,stop logger"|tee -a $logfilename
+	    msg="process num $p_num,session number $s_num,stop logger"
+	    write_log $msg
+ 	    break
+	  fi
+	  sleep $loggap
+	done
+}
+
+smonitor_log(){
+	while true
+	do
+	  write_srv_log
+          srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port\|$client_ip"|grep ESTABLISHED|wc -l)
+	  if [ "$srv_session" -eq 0 ]; then
+	    msg="server session number $srv_session,stop logger"
+	    write_log $msg
  	    break
 	  fi
 	  sleep $loggap
