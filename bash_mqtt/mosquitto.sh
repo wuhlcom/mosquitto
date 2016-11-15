@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #mosquitto client
 #date: 2016-11-10
 #auth: wuhongliang
@@ -9,7 +9,7 @@
 #
 #source client_monitor.sh
 if [ -z $1 ];then
-  host=192.168.10.188
+  host=192.168.10.103
 else
   host=$1
 fi
@@ -35,9 +35,9 @@ fi
 j=0
 for i in `seq $snum $enum`
 do	
-	topic="sensortopicpc166$i"
+	topic="sendtopicpc166$i"
 	id="clientidpc166$i"
-	mosquitto_sub -t $topic -h $host -q $j -i $id -k 120&
+	mosquitto_sub -t $topic -h $host -p $port -q $j -i $id -k 120&
 	echo client  \'$id\' sub topic \'$topic\'
 	j=`expr $j + 1`
 	if [ $j -ge 3 ]; then
@@ -45,18 +45,17 @@ do
 	fi	
 done
 
-#source client_monitor.sh
-#client logs
-sudo ./client_monitor.sh report&
+source ./logger.sh
+monitor_log&
 
 while true 
 do
 	for i in `seq $snum $enum`
 	do
-		topic="sensortopicpc166$i"
+		topic="sendtopicpc166$i"
 		id="pubidpc166$i"
 		msg="PC166testMSG$i"
-		mosquitto_pub -t $topic -m $msg -h $host -i $id  -q 2 
+		mosquitto_pub -t $topic -m $msg -h $host -p $port -i $id  -q 2 
 		sleep 1
 	done
 done

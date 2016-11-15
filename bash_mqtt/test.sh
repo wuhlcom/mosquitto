@@ -23,8 +23,9 @@ funtion2(){
 #report&
 
 source logger.sh
-cpu=`top_cpu`
-echo $cpu
+#cpu=`top_cpu`
+#echo $cpu
 #write_log "test" 
-write_mqtt_log 
+#write_mqtt_log 
+monitor_log&
 

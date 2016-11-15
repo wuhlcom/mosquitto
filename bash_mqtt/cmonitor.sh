@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #date:2016-11-10
 #auth:wuhongliang
 if [ -z $2 ];then

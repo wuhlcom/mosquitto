@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #mosquitto client
 #date: 2016-11-10
 #auth: wuhongliang

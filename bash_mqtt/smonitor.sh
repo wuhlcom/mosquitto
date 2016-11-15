@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #moniter
 # statstic the mqtt connetions number
 # mointer the processes

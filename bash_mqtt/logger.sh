@@ -1,10 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 curr_path=`pwd`
 logpath=$curr_path/clogs/
 currenttime=`date "+%Y%m%d%H%M%S"`
 fileSize=81920
 logfilename=""
-
 if [ -z $1 ];then
   srv_ip=192.168.10.103
 else
@@ -16,14 +15,14 @@ if [ -z $2 ];then
 else
   srv_port=$2
 fi
-
+loggap=10
 top_cpu() {
- cpuinf=`top -n 1|grep "Cpu"`
+ cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
 }
 
 top_mem() {
- memin=`top -n 1|grep "Mem"`
+ memin=`top -bn 1|grep "Mem"`
  echo  ${memin}
 }
 
@@ -140,10 +139,14 @@ write_mqtt_log(){
 monitor_log(){
 	while true
 	do
-	 write_mqtt_log
-	 if [ $process_num -eq 0 -o $session_num -eq 0 ];then
-	  break
+	  write_mqtt_log
+	  p_num=`ps -ef | grep mosquitto_sub|wc -l`
+	  s_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
+	  if [ "$p_num" -eq 0 ] ||[ "$s_num" -eq 0 ]; then
+	    echo "process num $p_num,session number $s_num,stop logger"|tee -a $logfilename
+ 	    break
 	  fi
+	  sleep $loggap
 	done
 }
 

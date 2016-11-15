@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #服务进程需要监控：dispatch 、topicroute 、mqtt_process、access
 server_ip=192.168.10.188
 client_ip=192.168.10.166
