@@ -1,4 +1,6 @@
 #!bin/bash
+#capture packes and save
+#user must be root
 #auth:wuhongliang
 #date 2016-11-16
 #intf="enp2s0"
@@ -7,10 +9,9 @@
 #capFile="cap_$intf.pcapng"
 #capFileSize=1
 #capFileNum=2
+#
 source ./mqtt.conf
-echo $capPath
-echo $capFileSize
 cap(){
 test -d $capPath||mkdir $capPath
-tcpdump -i intf tcp port "$port" -w "$capPath$capFile" -C "$capFileSize" -W "$capFileNum"&
+sudo nohup tcpdump -i intf tcp port "$port" -w "$capPath$capFile" -C "$capFileSize" -W "$capFileNum"&
 }

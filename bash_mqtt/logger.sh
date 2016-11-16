@@ -1,29 +1,9 @@
 #!/bin/bash
-curr_path=`pwd`
-logpath=$curr_path/logs/
-currenttime=`date "+%Y%m%d%H%M%S"`
-fileSize=81920
-logfilename=""
-if [ -z $1 ];then
-  srv_ip=192.168.10.188
-else
-  srv_ip=$1
-fi
-
-if [ -z $2 ];then
-  srv_port=1883
-else
-  srv_port=$2
-fi
-
-if [ -z $3 ];then
-  loggap=10
-else
-  loggap=$3
-fi
-
-client_ip=192.168.10.
-
+#create mosquitto client logs or server logs
+#auth:wuhongliang
+#date:2016-11-14
+source ./mqtt.conf
+echo $logPath
 top_cpu() {
  cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
@@ -55,13 +35,17 @@ swapinfo() {
 mqttinfo(){
  process_num=`ps -ef | grep mosquitto_sub|wc -l`
  session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
-  mqttinf="process number: $process_num tcp session number: $session_num"
+  mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
  }
 
 srv_mqttinfo(){
- srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep ESTABLISHED|wc -l)
- srv="mqtt sesion num $srv_session"
+ if [ -n $clientIP ];then
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+ else
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+ fi
+ srv="mqtt server sesion num $srv_session"
  echo ${srv}
 }
 
@@ -93,22 +77,22 @@ srv_jps(){
 
 createpath (){
  #create log file dir
- test -d $logpath||mkdir $logpath
+ test -d $logPath||mkdir $logPath
  }
 
 createfile()
 {
     createpath
-    getLastLogFileName $logpath
-    filename=$logfilename
+    getLastLogFileName $logPath
+    filename=$logFileName
     isNeedNewFile $filename 
     result=$?
     if [ $result -eq 0 ];then
-        logfilename=${logpath}clogs${currenttime}.log
+        logFileName=${logPath}clogs${currentTime}.log
     elif [ $result -eq 2 ];then
-        logfilename=${logpath}clogs${currenttime}.log
+        logFileName=${logPath}clogs${currentTime}.log
     else
-        logfilename=${logpath}$filename
+        logFileName=${logPath}$filename
     fi
 }
 
@@ -143,16 +127,16 @@ write_log ()
 			  fi
               case $level in
                debug)
-               echo "[DEBUG] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logfilename
+               echo "[DEBUG] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
                ;;
                info)
-               echo "[INFO] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logfilename
+               echo "[INFO] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
                ;;
                error)
-               echo "[ERROE] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logfilename
+               echo "[ERROE] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
                ;;
                *)
-               echo "error......" >> $logfilename
+               echo "error......" >> $logFileName
                ;;
                esac
 }
@@ -161,8 +145,8 @@ getLastLogFileName()
 {
     path=$1
     cd $path
-    lastLog=`ls -l |grep $currenttime | sort -k8rn | head -1 |awk '{print $9}'`
-    logfilename=$lastLog
+    lastLog=`ls -l |grep $currentTime | sort -k8rn | head -1 |awk '{print $9}'`
+    logFileName=$lastLog
 }
 
 write_mqtt_log(){
@@ -192,11 +176,11 @@ monitor_log(){
 	  p_num=`ps -ef | grep mosquitto_sub|wc -l`
 	  s_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
 	  if [ "$p_num" -eq 0 ] ||[ "$s_num" -eq 0 ]; then
-	    msg="process num $p_num,session number $s_num,stop logger"
+	    msg="mqtt client process num $p_num,session number $s_num,stop logger"
 	    write_log $msg
  	    break
 	  fi
-	  sleep $loggap
+	  sleep $logGap
 	done
 }
 
@@ -210,7 +194,7 @@ smonitor_log(){
 	    write_log $msg
  	    break
 	  fi
-	  sleep $loggap
+	  sleep $logGap
 	done
 }
 

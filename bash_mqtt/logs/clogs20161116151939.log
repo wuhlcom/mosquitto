@@ -1,0 +1,8 @@
+[DEBUG] 20161116151939 : %Cpu(s): 0.3 us, 9.1 sy, 0.0 ni, 90.5 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116151939 : mem total:16038 used:206 free:14189  
+[DEBUG] 20161116151939 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116151939 : process number: 7 tcp session number: 2  
+[DEBUG] 20161116151950 : %Cpu(s): 0.3 us, 9.1 sy, 0.0 ni, 90.5 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116151950 : mem total:16038 used:207 free:14188  
+[DEBUG] 20161116151950 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116151950 : process number: 7 tcp session number: 2  
