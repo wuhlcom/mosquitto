@@ -1,0 +1,160 @@
+[DEBUG] 20161116120424 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120424 : mem total:16038 used:6032 free:8028  
+[DEBUG] 20161116120424 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120424 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120437 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120437 : mem total:16038 used:6041 free:7947  
+[DEBUG] 20161116120437 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120437 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120450 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120450 : mem total:16038 used:6041 free:7946  
+[DEBUG] 20161116120450 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120450 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120504 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120504 : mem total:16038 used:6044 free:7943  
+[DEBUG] 20161116120504 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120504 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120517 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120517 : mem total:16038 used:6045 free:7943  
+[DEBUG] 20161116120517 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120517 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120530 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120530 : mem total:16038 used:6045 free:7942  
+[DEBUG] 20161116120530 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120530 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120543 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120543 : mem total:16038 used:6047 free:7940  
+[DEBUG] 20161116120543 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120543 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120556 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120556 : mem total:16038 used:6047 free:7940  
+[DEBUG] 20161116120556 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120556 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120609 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120609 : mem total:16038 used:6047 free:7940  
+[DEBUG] 20161116120609 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120609 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120622 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120622 : mem total:16038 used:6046 free:7942  
+[DEBUG] 20161116120622 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120622 : process number: 10001 tcp session number: 10000  
+[DEBUG] 20161116120635 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120635 : mem total:16038 used:6042 free:7945  
+[DEBUG] 20161116120635 : swap total:16371 used:47 free:16324  
+[DEBUG] 20161116120635 : process number: 10001 tcp session number: 10000  
+[DEBUG] 20161116120648 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120648 : mem total:16038 used:6050 free:7937  
+[DEBUG] 20161116120648 : swap total:16371 used:46 free:16325  
+[DEBUG] 20161116120648 : process number: 10001 tcp session number: 10000  
+[DEBUG] 20161116120701 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120701 : mem total:16038 used:6046 free:7940  
+[DEBUG] 20161116120701 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120701 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120714 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120714 : mem total:16038 used:6049 free:7937  
+[DEBUG] 20161116120714 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120714 : process number: 10001 tcp session number: 10001  
+[DEBUG] 20161116120727 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120727 : mem total:16038 used:6033 free:7954  
+[DEBUG] 20161116120727 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120727 : process number: 10001 tcp session number: 10000  
+[DEBUG] 20161116120741 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120741 : mem total:16038 used:6185 free:7796  
+[DEBUG] 20161116120741 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120741 : process number: 10954 tcp session number: 11423  
+[DEBUG] 20161116120756 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120756 : mem total:16038 used:9916 free:3817  
+[DEBUG] 20161116120756 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120756 : process number: 17122 tcp session number: 17540  
+[DEBUG] 20161116120813 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120813 : mem total:16038 used:11885 free:1669  
+[DEBUG] 20161116120813 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120813 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120829 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120829 : mem total:16038 used:11864 free:1690  
+[DEBUG] 20161116120829 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120829 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120846 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120846 : mem total:16038 used:11864 free:1689  
+[DEBUG] 20161116120846 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120846 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120902 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120902 : mem total:16038 used:11865 free:1688  
+[DEBUG] 20161116120902 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120902 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120918 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120918 : mem total:16038 used:11866 free:1688  
+[DEBUG] 20161116120918 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120918 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120935 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120935 : mem total:16038 used:11865 free:1688  
+[DEBUG] 20161116120935 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120935 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116120951 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116120951 : mem total:16038 used:11868 free:1685  
+[DEBUG] 20161116120951 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116120951 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121007 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121007 : mem total:16038 used:11876 free:1677  
+[DEBUG] 20161116121007 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121007 : process number: 20002 tcp session number: 19928  
+[DEBUG] 20161116121024 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121024 : mem total:16038 used:11883 free:1668  
+[DEBUG] 20161116121024 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121024 : process number: 20002 tcp session number: 19922  
+[DEBUG] 20161116121041 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121041 : mem total:16038 used:11889 free:1661  
+[DEBUG] 20161116121041 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121041 : process number: 20002 tcp session number: 19932  
+[DEBUG] 20161116121057 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121057 : mem total:16038 used:11891 free:1659  
+[DEBUG] 20161116121057 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121057 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121114 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121114 : mem total:16038 used:11893 free:1658  
+[DEBUG] 20161116121114 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121114 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121131 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121131 : mem total:16038 used:11891 free:1659  
+[DEBUG] 20161116121131 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121131 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121147 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121147 : mem total:16038 used:11891 free:1660  
+[DEBUG] 20161116121147 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121147 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121204 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121204 : mem total:16038 used:11890 free:1661  
+[DEBUG] 20161116121204 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121204 : process number: 20001 tcp session number: 20002  
+[DEBUG] 20161116121221 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121221 : mem total:16038 used:11935 free:1641  
+[DEBUG] 20161116121221 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121221 : process number: 20001 tcp session number: 3774  
+[DEBUG] 20161116121237 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121237 : mem total:16038 used:11936 free:1579  
+[DEBUG] 20161116121237 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121237 : process number: 20001 tcp session number: 16216  
+[DEBUG] 20161116121254 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121254 : mem total:16038 used:11938 free:1578  
+[DEBUG] 20161116121254 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121254 : process number: 20001 tcp session number: 14713  
+[DEBUG] 20161116121310 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121310 : mem total:16038 used:11938 free:1578  
+[DEBUG] 20161116121310 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121310 : process number: 20001 tcp session number: 14596  
+[DEBUG] 20161116121327 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121327 : mem total:16038 used:11940 free:1576  
+[DEBUG] 20161116121327 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121327 : process number: 20001 tcp session number: 16046  
+[DEBUG] 20161116121343 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121343 : mem total:16038 used:11944 free:1573  
+[DEBUG] 20161116121343 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121343 : process number: 20001 tcp session number: 15777  
+[DEBUG] 20161116121400 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121400 : mem total:16038 used:11946 free:1572  
+[DEBUG] 20161116121400 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121400 : process number: 20002 tcp session number: 15207  
+[DEBUG] 20161116121416 : %Cpu(s): 0.3 us, 9.3 sy, 0.0 ni, 90.3 id, 0.1 wa, 0.0 hi, 0.0 si, 0.0 st  
+[DEBUG] 20161116121416 : mem total:16038 used:11946 free:1571  
+[DEBUG] 20161116121416 : swap total:16371 used:45 free:16326  
+[DEBUG] 20161116121416 : process number: 20002 tcp session number: 15193  
