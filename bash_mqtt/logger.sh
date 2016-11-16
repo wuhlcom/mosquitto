@@ -2,8 +2,7 @@
 #create mosquitto client logs or server logs
 #auth:wuhongliang
 #date:2016-11-14
-source ./mqtt.conf
-echo $logPath
+#source ./mqtt.conf 调试时需打开
 top_cpu() {
  cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
@@ -33,8 +32,9 @@ swapinfo() {
 }
 
 mqttinfo(){
- process_num=`ps -ef | grep mosquitto_sub|wc -l`
- session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
+  process_num=`ps -ef | grep "nohup mosquitto_sub"|wc -l`
+  session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
+  process_num=`expr $process_num - 1`
   mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
  }
@@ -85,12 +85,12 @@ createfile()
     createpath
     getLastLogFileName $logPath
     filename=$logFileName
-    isNeedNewFile $filename 
+    isNeedNewFile $filename
     result=$?
     if [ $result -eq 0 ];then
-        logFileName=${logPath}clogs${currentTime}.log
+        logFileName="${logPath}log-${intf}-${cIP}-${currentTime}.log"
     elif [ $result -eq 2 ];then
-        logFileName=${logPath}clogs${currentTime}.log
+        logFileName="${logPath}log-${intf}-${cIP}-${currentTime}.log"
     else
         logFileName=${logPath}$filename
     fi
