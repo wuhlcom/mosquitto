@@ -2,7 +2,10 @@
 #create mosquitto client logs or server logs
 #auth:wuhongliang
 #date:2016-11-14
-#source ./mqtt.conf 调试时需打开
+
+sPath=`dirname $0`
+source $sPath/mqtt.conf 
+logPath=$sPath/logs/
 top_cpu() {
  cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
@@ -32,11 +35,25 @@ swapinfo() {
 }
 
 mqttinfo(){
-  process_num=`ps -ef | grep "nohup mosquitto_sub"|wc -l`
+  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
   process_num=`expr $process_num - 1`
+  #echo `date +"%Y-%m-%d %H:%M:%S"`>"$sPath"/subResult
+  #echo $process_num>>"$sPath"/subResult
+  #echo $session_num>>"$sPath"/subResult
   mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
+ }
+
+subResult(){
+  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
+  ip_port="${srv_ip}:${srv_port}"
+  session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
+  echo $session
+  session_num=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED|wc -l`
+  process_num=`expr $process_num - 1`
+  echo ${process_num}
+  echo ${session_num}
  }
 
 srv_mqttinfo(){
@@ -45,8 +62,19 @@ srv_mqttinfo(){
  else
    srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
  fi
+ #echo `date +"%Y-%m-%d %H:%M:%S"`>"$sPath"/srvResult
+ #echo $srv_session>>"$sPath"/srvResult
  srv="mqtt server sesion num $srv_session"
  echo ${srv}
+}
+
+srvResult(){
+ if [ -n $clientIP ];then
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+ else
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+ fi
+ echo ${srv_session}
 }
 
 srv_mqtt(){
@@ -147,6 +175,7 @@ getLastLogFileName()
     cd $path
     lastLog=`ls -l |grep $currentTime | sort -k8rn | head -1 |awk '{print $9}'`
     logFileName=$lastLog
+    cd .. 
 }
 
 write_mqtt_log(){
@@ -198,3 +227,10 @@ smonitor_log(){
 	done
 }
 
+if [ "$1" = "subresult" ];then
+   subResult
+elif [ "$1" = "srvresult" ];then
+   srvResult
+else
+  echo "Please input 'subresult' or 'srvresult'"  
+fi 
