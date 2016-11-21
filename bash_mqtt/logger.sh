@@ -49,7 +49,6 @@ subResult(){
   process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   ip_port="${srv_ip}:${srv_port}"
   session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
-  echo $session
   session_num=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED|wc -l`
   process_num=`expr $process_num - 1`
   echo ${process_num}
@@ -227,7 +226,11 @@ smonitor_log(){
 	done
 }
 
-if [ "$1" = "subresult" ];then
+if [ "$1" = "monitorlog" ];then
+   monitor_log
+elif [ "$1" = "smonitorlog" ];then
+   smonitor_log
+elif [ "$1" = "subresult" ];then
    subResult
 elif [ "$1" = "srvresult" ];then
    srvResult
