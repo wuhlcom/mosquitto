@@ -29,11 +29,12 @@ funtion2(){
 #write_mqtt_log 
 #monitor_log&
 #write_log "test"
+
 sPath=`dirname $0`
 source $sPath/logger.sh
 logPath=$sPath/clogs/
 
-total="11111"
+total='预期mosquitto_subo数2个，实际进程数4个，会话建立成功数2'
 proRs=""
 write_log $total
 write_log $proRs 

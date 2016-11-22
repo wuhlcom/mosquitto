@@ -147,13 +147,13 @@ write_log ()
               createfile 
               
               msg=$1
-              if [ -z $2 ];then
+              if [ -z "$2" ];then
 		level=debug
 	      else
-	        level=$1
+	        level=$2
 	      fi
-             
-              if [ -n $msg ];then
+              
+	     if [ -n "$msg" ];then
                 case $level in
                   debug)
                      echo "[DEBUG] `date "+[%Y-%m-%d %H:%M:%S]"` : $msg  " >> $logFileName
