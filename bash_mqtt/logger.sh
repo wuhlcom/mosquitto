@@ -147,25 +147,28 @@ write_log ()
               createfile 
               
               msg=$1
-			  if [ -z $2 ];then
-				level=debug
-			  else
-	            level=$1
-			  fi
-              case $level in
-               debug)
-               echo "[DEBUG] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
-               ;;
-               info)
-               echo "[INFO] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
-               ;;
-               error)
-               echo "[ERROE] `date "+%Y%m%d%H%M%S"` : $msg  " >> $logFileName
-               ;;
-               *)
-               echo "error......" >> $logFileName
-               ;;
-               esac
+              if [ -z $2 ];then
+		level=debug
+	      else
+	        level=$1
+	      fi
+             
+              if [ -n $msg ];then
+                case $level in
+                  debug)
+                     echo "[DEBUG] `date "+[%Y-%m-%d %H:%M:%S]"` : $msg  " >> $logFileName
+                  ;;
+                  info)
+                     echo "[INFO] `date "+[%Y-%m-%d %H:%M:%S]"` : $msg  " >> $logFileName
+                  ;;
+                  error)
+                     echo "[ERROE] `date "+[%Y-%m-%d %H:%M:%S]"` : $msg  " >> $logFileName
+                 ;;
+                 *)
+                     echo "error......" >> $logFileName
+                 ;;
+              esac
+	   fi
 }
 
 getLastLogFileName()
@@ -235,5 +238,5 @@ elif [ "$1" = "subresult" ];then
 elif [ "$1" = "srvresult" ];then
    srvResult
 else
-  echo "Please input 'subresult' or 'srvresult'"  
+  echo "Please input param(monitorlog,smonitorlog subresult,srvresult)"  
 fi 
