@@ -1,33 +1,30 @@
 #!/bin/bash 
 # send ssh cmd to run script of remote client  
-#注意文件加载的顺序
-sPath=`dirname $0`
-source $sPath/mqttClient.sh
-source $sPath/logger.sh
-#logPath=$sPath/rslogs/
 
+sPath=`dirname $0`
+source $sPath/logger.sh
+logPath=$sPath/clogs/
+source $sPath/mqtt.conf
+#ip_array=("192.168.10.164")  
 user="zhilu" 
 rootusr="root" 
 remote_dir="/home/${user}/mosquitto/bash_mqtt"
 remote_sub=$remote_dir/mqttClient.sh
 remote_query=$remote_dir/logger.sh
-
 subCMD=mqttsub  
 subRsCMD=subresult
 subStopCMD=stopsub
 sshPort=22
+#subNum=2
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
-waitForSession=5
-
+waitForSession=50
 localPcFlag=true
-#localPcFlag=false
 localIntf=eth0
 localPcIP=`ip a|grep "inet\s*192.168.10.*$localIntf"|awk -F " " '{print $2}'|sed 's/\/24//g'`
 local_query=$sPath/logger.sh
 
 subLog(){  
-  logPath=$sPath/rslogs/
   ipaddr=$1
   proNum=$2
   sesNum=$3 
@@ -67,22 +64,22 @@ localSub(){
 #查询本地订阅结果
 localQuery(){
   i=0
-   while true
-   do
-     subLoop=`cat "${sPath}/mqttSubNum"`
-     mqttSubNum=`echo $subLoop|awk -F " " '{print $3}'`
-     #订阅完成则查询订阅结果
-     if [ "$mqttSubNum" = "$subNum" ];then
-       subRs=$(${local_query} ${subRsCMD})
-       break
-     fi
-     ((i++))
-     #订阅超时后也要订阅结果
-     if [ "$i" = 10 ];then
+  while true
+  do
+    subLoop=`cat "${sPath}/mqttSubNum"`
+    mqttSubNum=`echo $subLoop|awk -F " " '{print $3}'`
+    #订阅完成则查询订阅结果
+    if [ "$mqttSubNum" = "$subNum" ];then
+      subRs=$(${local_query} ${subRsCMD})
+      break
+    fi
+    ((i++))
+    #订阅超时后也要订阅结果
+    if [ "$i" = 10 ];then
         subRs=$(${local_query} ${subRsCMD})
 	break
-     fi
-     sleep 5
+    fi
+    sleep 5
   done
   proNum=`echo $subRs|awk -F " " '{print $1}'`
   sesNum=`echo $subRs|awk -F " " '{print $2}'`
@@ -93,25 +90,18 @@ localSQ(){
  localSub
  localQuery
 }
-
 #本地通过ssh执行远程服务器的脚本 
 remoteSub(){ 
-	step=1
-	for ip in ${ip_array[*]}  
-	do 
-	    #if IP is same as local ip,continue
-	    if [ "$ip" = "$localPcIP" ];then continue;fi
-	    #cp local mqtt.conf to remote client
-	    scp ${sPath}/mqtt.conf root@${ip}:${remote_dir} 
-	    newStart=`expr $sSubNum + $subNum \* $step`
-	    
-	    ssh -p $sshPort $rootusr@$ip "sed -i 's/sSubNum=${sSubNum}/sSubNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-	    sleep 2
-	    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
-	    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subCMD}"&
-	    sleep $waitForSession 
-           ((step++))
-	done  
+for ip in ${ip_array[*]}  
+do 
+    #if IP is same as local ip,continue
+    if [ "$ip" = "$localPcIP" ];then continue;fi
+    #cp local mqtt.conf to remote client
+    scp ${sPath}/mqtt.conf root@${ip}:${remote_dir} 
+    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
+    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subCMD}"&
+    sleep $waitForSession 
+done  
 }
 
 #查询远程订阅结果
@@ -144,24 +134,24 @@ remoteQuery(){
 }
 
 remoteSQ(){
-  remoteSub
-  remoteQuery
+ remoteSub
+ remoteQuery
 }
 
 stopRemoteSub(){
-	for ip in ${ip_array[*]}  
-	do 
-	    #if IP is same as local ip,continue
-	    if [ "$ip" = "$localPcIP" ];then continue;fi
-	    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
-	    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subStopCMD}"&
-	    sleep $waitForSession 
-	done  
+for ip in ${ip_array[*]}  
+do 
+    #if IP is same as local ip,continue
+    if [ "$ip" = "$localPcIP" ];then continue;fi
+    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
+    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subStopCMD}"&
+    sleep $waitForSession 
+done  
 }
 
 if $localPcFlag;then
 	localSQ
 	stopSubPub
 fi
-remoteSQ
-stopRemoteSub
+#remoteSQ
+#stopRemoteSub
