@@ -107,6 +107,7 @@ createpath (){
  test -d $logPath||mkdir $logPath
  }
 
+#创建日志文件名
 createfile()
 {
     createpath
@@ -123,6 +124,7 @@ createfile()
     fi
 }
 
+#判断文件名是否存在及文件是否超过指定的大小
 isNeedNewFile()
 {
     filename=$1
@@ -141,7 +143,7 @@ isNeedNewFile()
         return 2
     fi
 }
-
+#创建日志
 write_log ()
 {
               createfile 
@@ -170,7 +172,7 @@ write_log ()
               esac
 	   fi
 }
-
+#
 getLastLogFileName()
 {
     path=$1
@@ -199,7 +201,7 @@ write_srv_log(){
 	write_log "$srv2"
 	write_log "$srv3"
 }
- 
+#监控客户端并生成日志 
 monitor_log(){
 	while true
 	do
@@ -214,7 +216,7 @@ monitor_log(){
 	  sleep $logGap
 	done
 }
-
+#监控服务端并生成日志
 smonitor_log(){
 	while true
 	do

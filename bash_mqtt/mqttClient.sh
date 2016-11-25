@@ -53,6 +53,20 @@ mqttClient(){
 	done
 }
 
+mqttSub(){
+      subtopic=$1
+      subid=$2
+      if [ -n "$3" ];then
+         subqos=$3
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
+         echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
+      else
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
+         echo client  \'$subid\' sub topic \'$subtopic\'
+      fi
+      
+}
+
 #mosuqitto_sub
 mqtt_sub(){
 	if $capFlag;then
@@ -62,10 +76,9 @@ mqtt_sub(){
 	j=0
 	for i in `seq $sSubNum $eSubNum`
 	do	
-		topic="sendtopicpc166$i"
-		id="clientidpc166$i"
-        	mosquitto_sub -t $topic -h $srv_ip -p $srv_port -q $j -i $id -k $keepLive&
-		echo client  \'$id\' sub topic \'$topic\'
+		subTopic="mosquittoTopic$i"
+		subID="mosquittoSubId$i"
+		mqttSub $subTopic $subID $j
 		j=`expr $j + 1`
 		if [ $j -ge 3 ]; then
 			j=0
@@ -79,17 +92,28 @@ mqtt_sub(){
 
 }
 
+mqttPub(){
+        pubtopic=$1
+        pubmsg=$2
+	pubid=$3
+        if [ -n "$4" ];then
+        	pubqos=$4
+		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos
+	else
+		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid 
+	fi
+}
+
 #mosquitto_pub
 mqtt_pub(){
 	while true 
 	do
 		for i in `seq $sPubNum $ePubNum`
 		do
-			topic="sendtopicpc166$i"
-			id="pubidpc166$i"
-			msg="PC166testMSG$i"
-			mosquitto_pub -t $topic -m $msg -h $srv_ip -p $srv_port -i $id  -q $pubQos 
-			sleep 1
+			pubTopic="mosquittoTopic$i"
+			pubID="mosquittoPubId$i"
+			pubMsg="mosquittoMSG$i"
+			mqttPub $pubTopic $pubID $pubMsg $pubQos
 		done
 	done
 }
@@ -101,7 +125,6 @@ stopSubPub(){
 	  OLD_IFS="$IFS"
 	  IFS=" "
 	  arr=($pids)
-          echo $arr
 	  IFS="$OLD_IFS"
 	  for pid in ${arr[@]};
 	  do 
@@ -127,14 +150,3 @@ case $1 in
      ;;
 esac
 
-#if [ $1 = "mqttsub" ];then
-#  mqtt_sub
-#elif [ $1 = "mqttpub" ];then
-#  mqtt_pub
-#elif [ $1 = "mqttclient" ];then
-#  mqttClient
-#elif [ $1 = "stopsub" ];then
-# stopSubPub
-#else
-# echo "Please input mqttsub or mqttpub or mqttclient"
-#fi

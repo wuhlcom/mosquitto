@@ -13,5 +13,5 @@
 #source ./mqtt.conf
 cap(){
 test -d $capPath||mkdir $capPath
-sudo nohup tcpdump -i intf tcp port "$port" -w "$capPath$capFile" -C "$capFileSize" -W "$capFileNum"&
+sudo nohup tcpdump -i intf tcp port "$filterPort" -w "$capPath$capFile" -C "$capFileSize" -W "$capFileNum"&
 }

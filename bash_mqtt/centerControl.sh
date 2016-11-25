@@ -26,6 +26,7 @@ localIntf=eth0
 localPcIP=`ip a|grep "inet\s*192.168.10.*$localIntf"|awk -F " " '{print $2}'|sed 's/\/24//g'`
 local_query=$sPath/logger.sh
 
+#记录进程和会话结果
 subLog(){  
   logPath=$sPath/rslogs/
   ipaddr=$1
@@ -88,13 +89,13 @@ localQuery(){
   sesNum=`echo $subRs|awk -F " " '{print $2}'`
   subLog $localPcIP $proNum $sesNum
 }
-
+#本地订阅并记录结果
 localSQ(){
  localSub
  localQuery
 }
 
-#本地通过ssh执行远程服务器的脚本 
+#本地下达指令让远程机器进行订阅
 remoteSub(){ 
 	step=1
 	for ip in ${ip_array[*]}  
@@ -114,11 +115,12 @@ remoteSub(){
 	done  
 }
 
-#查询远程订阅结果
+#本地下达指令查询远程订阅结果
 remoteQuery(){
  i=0
  for ip in ${ip_array[*]}
   do
+    #排除本地IP
     if [ "$ip" = "$localPcIP" ];then continue;fi
     while true
     do
@@ -143,11 +145,13 @@ remoteQuery(){
  done
 }
 
+#远程订阅并记录结果
 remoteSQ(){
   remoteSub
   remoteQuery
 }
 
+#停止远程订阅
 stopRemoteSub(){
 	for ip in ${ip_array[*]}  
 	do 
