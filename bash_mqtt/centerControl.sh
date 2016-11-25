@@ -4,17 +4,17 @@
 sPath=`dirname $0`
 source $sPath/mqttClient.sh
 source $sPath/logger.sh
-#logPath=$sPath/rslogs/
 
 user="zhilu" 
 rootusr="root" 
 remote_dir="/home/${user}/mosquitto/bash_mqtt"
-remote_sub=$remote_dir/mqttClient.sh
+remote_mqttClient=$remote_dir/mqttClient.sh
 remote_query=$remote_dir/logger.sh
 
 subCMD=mqttsub  
 subRsCMD=subresult
 subStopCMD=stopsub
+subPubCMD=subpub
 sshPort=22
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
@@ -108,8 +108,8 @@ remoteSub(){
 	    
 	    ssh -p $sshPort $rootusr@$ip "sed -i 's/sSubNum=${sSubNum}/sSubNum=${newStart}/g' ${remote_dir}/mqtt.conf"
 	    sleep 2
-	    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
-	    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subCMD}"&
+	    # ssh -t -p $sshPort $user@$ip "$remote_mqttClient"&
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCMD}"&
 	    sleep $waitForSession 
            ((step++))
 	done  
@@ -157,15 +157,39 @@ stopRemoteSub(){
 	do 
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
-	    # ssh -t -p $sshPort $user@$ip "$remote_sub"&
-	    ssh -p $sshPort $rootusr@$ip "${remote_sub} ${subStopCMD}"&
-	    sleep $waitForSession 
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"&
 	done  
 }
 
-if $localPcFlag;then
-	localSQ
-	stopSubPub
-fi
-remoteSQ
-stopRemoteSub
+mqttSubPubRemote(){
+	sum=0
+	for ip in ${ip_array[*]}  
+	do 
+	    #if IP is same as local ip,continue
+	    if [ "$ip" = "$localPcIP" ];then continue;fi
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subPubCMD}"&
+            num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/subPubMsgNum|wc -l"`
+	   
+            if [ "$num" -ne "$sub_pub_num" ];then
+        	diffvalue=`expr $sub_pub_num- $snum`
+	        pcrs="${ip}预期订阅/发布总数为$sub_pub_num,实际数量为$num,相差${diffvalue}\n"       
+	    fi
+
+	    sum=`expr $sum + $num` 
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"&
+	done 
+        len=${#ip_array[@]} 
+        expectNum=`expr $len \* $sub_pub_num`
+        if [ "$sum" = "$expectNum" ];then
+	        rs="预期订阅/发布总数为$expectNum,实际数量为$sum\n"       
+	else 
+        	value=`expr $expectNum - $sum`
+	        rs="预期订阅/发布总数为$expectNum,实际数量为$sum,相差${value}\n"        
+	fi
+}
+#if $localPcFlag;then
+#	localSQ
+#	stopSubPub
+#fi
+#remoteSQ
+#stopRemoteSub

@@ -2,10 +2,8 @@
 #mosquitto client
 #date: 2016-11-10
 #auth: wuhongliang
-#params:
-#  snum,start number
-#  enum,end number
-#  srv_ip,mqtt server ip or domain
+# 
+#mosquitto_sub mosquitto_pub
 #
 #sPath=`pwd`
 sPath=`dirname $0`
@@ -105,7 +103,7 @@ mqttSubPub(){
 	fi
  
 	j=0
-	>subPubMsg
+	>subPubMsgNum
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
 		sid="mqttsubid$i"
@@ -116,16 +114,14 @@ mqttSubPub(){
 		fi
 	done
 
-#	while true 
-#	do
-		for i in `seq $subPubSNum $subPubENum`
-		do
+	for i in `seq $subPubSNum $subPubENum`
+	do
 			pid="mqttpubid$i"
 			msg="mqttpubmsg$i"
 			mqttPub $topic $pid $msg $pubQos
-		done
-#	done
+	done
 }
+
 case $1 in
    "mqttsub")
      mqtt_sub
