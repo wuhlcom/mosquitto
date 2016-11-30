@@ -9,9 +9,12 @@ source $cuPath/centerControl.sh
 testConn(){
 	if $localPcFlag;then
         	localSQ
-	        stopSubPub
 	fi
 	remoteSQ
+
+	if $localPcFlag;then
+	        stopSubPub
+	fi
 	stopRemoteSub
 }
 
@@ -25,13 +28,29 @@ testConnTi(){
 
 	sleep 300
 
-	localQuery
-	stopSubPub
-
+	if $localPcFlag;then
+		localQuery
+	fi
 	remoteQuery
+
+	if $localPcFlag;then
+		stopSubPub
+	fi
 	stopRemoteSub
 }
 
+#testcase 4
+#test plenty of sub/pub 
+testSubPub(){
+	if $localPcFlag;then
+	      mqttSubPubLocal	
+	fi
+	mqttSubPubRemote
 
-
+	if $localPcFlag;then
+	      stopSubPub
+	fi
+	stopRemoteSub
+}
+testSubPub
 

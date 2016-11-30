@@ -115,10 +115,14 @@ createfile()
     filename=$logFileName
     isNeedNewFile $filename
     result=$?
-    if [ $result -eq 0 ];then
+    if [ -z "$1" ];then
         logFileName="${logPath}log-${intf}-${cIP}-${currentTime}.log"
-    elif [ $result -eq 2 ];then
-        logFileName="${logPath}log-${intf}-${cIP}-${currentTime}.log"
+    else
+   	logFileName=$1
+    fi
+
+    if [ $result -eq 0 ] || [ $result -eq 2 ];then
+        logFileName=$logFileName
     else
         logFileName=${logPath}$filename
     fi
@@ -146,13 +150,18 @@ isNeedNewFile()
 #创建日志
 write_log ()
 {
-              createfile 
-              
               msg=$1
-              if [ -z "$2" ];then
+              
+	      if [ -n "$2" ];then
+	           createfile $2 
+	      else
+		   createfile
+	      fi
+              
+	      if [ -z "$3" ];then
 		level=debug
 	      else
-	        level=$2
+	        level=$3
 	      fi
               
 	     if [ -n "$msg" ];then
@@ -239,6 +248,8 @@ elif [ "$1" = "subresult" ];then
    subResult
 elif [ "$1" = "srvresult" ];then
    srvResult
+elif [ "$1" = "test" ];then
+   write_log $2
 else
   echo "Please input param(monitorlog,smonitorlog subresult,srvresult)"  
 fi 

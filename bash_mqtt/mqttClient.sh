@@ -8,10 +8,10 @@
 #sPath=`pwd`
 sPath=`dirname $0`
 source $sPath/mqtt.conf
-#source $sPath/logger.sh
 source $sPath/tcpdump.sh
 echoFlag=true
 
+#mosquitto_sub
 mqttSub(){
       subtopic=$1
       subid=$2
@@ -30,7 +30,7 @@ mqttSub(){
       
 }
 
-#mosuqitto_sub
+#mosquitto_sub
 mqtt_sub(){
 	if $capFlag;then
 	 cap
@@ -55,6 +55,7 @@ mqtt_sub(){
 
 }
 
+#mqtt pub
 mqttPub(){
         pubtopic=$1
         pubmsg=$2
@@ -65,6 +66,59 @@ mqttPub(){
 	else
 		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid 
 	fi
+}
+
+#mqtt pub retain
+mqttPubR(){
+        pubtopic=$1
+        pubmsg=$2
+	pubid=$3
+     	pubqos=2
+	mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos -r
+}
+
+#plenty of mqtt pub retain msg
+mqttPub_R(){
+  for i in `seq $pubRsNum $pubReNum`
+  do
+    rPubTopic="pubTopicRetain${i}"
+    rPubMsg="pubMsgRetain${i}"
+    rPubID="pubIDRetain${i}"
+    mqttPubR $rPubTopic $rPubMsg $rPubID 
+  done
+}
+
+#stop plenty of mqtt pub retain msg
+stopMqttPub_R(){
+  for i in `seq $pubRsNum $pubReNum`
+  do
+    rPubTopic="pubTopicRetain${i}"
+    rPubID="pubIDRetain${i}"
+    mosquitto_pub -t $rPubTopic -n -h $srv_ip -p $srv_port -i $rPubID  -q 2 -r
+  done
+}
+
+#mosquitto_sub retain msg
+mqttSub_R(){
+	if $capFlag;then
+	 cap
+	fi
+
+	j=0
+	for i in `seq $pubRsNum $pubReNum`
+	do	
+        rPubTopic="pubTopicRetain${i}"
+	rSubID="subMsgRetainId$i"
+ 	mqttSub $subTopic $subID $j
+	j=`expr $j + 1`
+	if [ $j -ge 3 ]; then
+		j=0
+	fi
+         echo `date +"%Y-%m-%d %H:%M:%S"`>"$sPath"/mqttSubRNum
+         echo `expr $i - $pubRsNum + 1`>>"$sPath"/mqttSubRNum	
+	done
+
+	$sPath/logger.sh monitorlog&
 }
 
 #mosquitto_pub
@@ -95,30 +149,31 @@ stopSubPub(){
 	  done
 }
 
+#先订阅后发布，主题保持不变
 mqttSubPub(){
-        topic="mqtttopic"
 	echoFlag=false
 	if $capFlag;then
 	 cap
 	fi
  
 	j=0
-	>subPubMsgNum
+	:>$sPath/subPubMsgNum
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
 		sid="mqttsubid$i"
-		mqttSub $topic $sid $j>>subPubMsgNum
+		mqttSub $subPubTopic $sid $j>>$sPath/subPubMsgNum
 		j=`expr $j + 1`
 		if [ $j -ge 3 ]; then
 			j=0
 		fi
 	done
-
+        
+        #发布消息的序列可以与订阅的序列不一样
 	for i in `seq $subPubSNum $subPubENum`
 	do
-			pid="mqttpubid$i"
-			msg="mqttpubmsg$i"
-			mqttPub $topic $pid $msg $pubQos
+		pid="mqttpubid$i"
+		msg="mqttpubmsg$i"
+		mqttPub $subPubTopic $msg $pid $pubQos
 	done
 }
 
@@ -137,6 +192,12 @@ case $1 in
      ;;
    "subpub")
      mqttSubPub
+     ;;
+   "pubretain")
+     mqttPub_R
+     ;;
+   "stopPubretain")
+     stopMqttPub_R
      ;;
    *)
      echo "Please input mqttsub or mqttpub or mqttclient"
