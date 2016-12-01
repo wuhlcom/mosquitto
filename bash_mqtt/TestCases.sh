@@ -6,7 +6,7 @@ source $cuPath/centerControl.sh
 
 #testcase 1
 #test the connettion number
-testConn(){
+testSub(){
 	if $localPcFlag;then
         	localSQ
 	fi
@@ -20,7 +20,7 @@ testConn(){
 
 #testcase 2
 #test 5 minutes connetstion status
-testConnTi(){
+testSubLong(){
 	if $localPcFlag;then
         	localSQ
 	fi
@@ -52,5 +52,16 @@ testSubPub(){
 	fi
 	stopRemoteSub
 }
-testSubPub
 
+#testcase 5
+testSubRetain(){
+   if $localPcFlag;then
+      subPubRetain	
+   fi
+   retainRemote
+
+   stopSubRetain
+   stopRetainRemote
+}
+
+testSubRetain
