@@ -15,19 +15,30 @@ echoFlag=true
 mqttSub(){
       subtopic=$1
       subid=$2
-      if [ -n "$3" ];then
-         subqos=$3
-         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
+      if $mqttAuth;then
+          if [ -z "$3" ] || [ -z "$4" ] ;then
+              echo "ERROR:Please input the mosquitto client usrname and password!"
+          fi
+         usr=$3
+         passwd=$4
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q 2 -i $subid -k $keepLive -u $usr -P $passwd&
         if $echoFlag;then
+                 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
+        fi
+     else 
+       if [ -n "$3" ];then
+          subqos=$3
+          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
+          if $echoFlag;then
 		 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
-	fi
-      else
+	  fi
+       else
          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
-        if $echoFlag;then
-         echo client  \'$subid\' sub topic \'$subtopic\'
-	fi
+         if $echoFlag;then
+           echo client  \'$subid\' sub topic \'$subtopic\'
+	 fi
       fi
-      
+     fi
 }
 
 #mosquitto_sub
@@ -35,12 +46,19 @@ mqtt_sub(){
 	if $capFlag;then
 	 cap
 	fi
-
+          
 	j=0
+        subIDPre="mosquittoSubId"
+
+        #create mqtt usr passwd
+        if $mqttAuth;then
+	    ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${inft}-${cIP}"
+        fi
+
 	for i in `seq $sSubNum $eSubNum`
 	do	
 		subTopic="mosquittoTopic$i"
-		subID="mosquittoSubId$i"
+		subID="$subIDPre$i"
 		mqttSub $subTopic $subID $j
 		j=`expr $j + 1`
 		if [ $j -ge 3 ]; then

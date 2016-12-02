@@ -1,9 +1,9 @@
 require './mqtt.rb'
-num=20000
-#host="192.168.10.166"
-host="192.168.10.103"
+num=5000
+host="192.168.10.188"
+#host="192.168.10.20"
 topic_arr=["only you"]
-cid = "12345"
+#cid = "12345"
 cid =nil
 mqtt=MqClient.new
 #mqtt.client_sub_msg(host,topic_arr,cid)

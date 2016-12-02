@@ -1,41 +1,14 @@
-#log content time
-function logtime {
-  t=`date +"[%Y-%m-%d %H:%M:%S]"`
-  echo ${t}
+x=$1
+y=$2
+testf(){
+  a=$1
+  b=$2
+  c=$3
+  echo $a
 }
 
-if [ -z $1 ];then
- num=100
-else
- num=$1
-fi
-#echo $num
-
-funtion1(){
- te1num=1234
+testf2(){
+  testf $x $y
 }
 
-funtion2(){
-   tel
-   echo $telnum
-}
-#source client_monitor.sh
-#report&
-
-#source logger.sh
-#cpu=`top_cpu`
-#echo $cpu
-#write_log "test" 
-#write_mqtt_log 
-#monitor_log&
-#write_log "test"
-
-sPath=`dirname $0`
-source $sPath/logger.sh
-logPath=$sPath/clogs/
-
-total='预期mosquitto_subo数2个，实际进程数4个，会话建立成功数2'
-proRs=""
-write_log $total
-write_log $proRs 
-
+testf2
