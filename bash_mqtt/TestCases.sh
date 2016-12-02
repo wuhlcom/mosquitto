@@ -8,12 +8,12 @@ source $cuPath/centerControl.sh
 #test the connettion number
 testSub(){
 	if $localPcFlag;then
-        	localSQ
+        	localSQ&
 	fi
 	remoteSQ
 
 	if $localPcFlag;then
-	        stopSubPub
+	        stopSubPub&
 	fi
 	stopRemoteSub
 }
@@ -22,19 +22,19 @@ testSub(){
 #test 5 minutes connetstion status
 testSubLong(){
 	if $localPcFlag;then
-        	localSQ
+        	localSQ&
 	fi
 	remoteSQ
 
 	sleep 300
 
 	if $localPcFlag;then
-		localQuery
+		localQuery&
 	fi
 	remoteQuery
 
 	if $localPcFlag;then
-		stopSubPub
+		stopSubPub&
 	fi
 	stopRemoteSub
 }
@@ -43,12 +43,12 @@ testSubLong(){
 #test plenty of sub/pub 
 testSubPub(){
 	if $localPcFlag;then
-	      mqttSubPubLocal	
+	      mqttSubPubLocal&	
 	fi
 	mqttSubPubRemote
 
 	if $localPcFlag;then
-	      stopSubPub
+	      stopSubPub&
 	fi
 	stopRemoteSub
 }
@@ -56,11 +56,13 @@ testSubPub(){
 #testcase 5
 testSubRetain(){
    if $localPcFlag;then
-      subPubRetain	
+      retainLocal&	
    fi
    retainRemote
 
-   stopSubRetain
+   if $localPcFlag;then
+     stopSubRetain&
+   fi
    stopRetainRemote
 }
 

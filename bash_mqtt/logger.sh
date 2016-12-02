@@ -251,5 +251,5 @@ elif [ "$1" = "srvresult" ];then
 elif [ "$1" = "test" ];then
    write_log $2
 else
-  echo "Please input param(monitorlog,smonitorlog subresult,srvresult)"  
+  echo "logger.sh"  
 fi 

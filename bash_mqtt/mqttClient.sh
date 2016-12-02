@@ -90,7 +90,7 @@ stopSubPub(){
 	  arr=($pids)
 	  IFS="$OLD_IFS"
 	  for pid in ${arr[@]};
-	  do 
+	  do
 	    kill -9 $pid
 	  done
 }
@@ -107,7 +107,7 @@ mqttSubPub(){
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
 		sid="mqttsubid$i"
-		mqttSub $subPubTopic $sid $j>>$sPath/${subPubFName}
+		mqttSub $subPubTopic $sid $j>>$sPath/${subPubFNamei}
 		j=`expr $j + 1`
 		if [ $j -ge 3 ]; then
 			j=0
@@ -180,12 +180,15 @@ subPubRetain(){
     rPubID="pubRetainID${i}"
     mqttPubR $rPubTopic $rPubMsg $rPubID 
   done
+
   sleep $retainGap 
+
   for i in `seq $pubRsNum $pubReNum`
     do	
        rPubTopic="pubTopicRetain${i}"
        rSubID="subRetainID$i"
-       mqttSub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}
+       #必须加&
+       mqttSub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}&
        j=`expr $j + 1`
        if [ $j -ge 3 ]; then
         	j=0
@@ -205,8 +208,8 @@ stopMqttPub_R(){
 }
 
 stopSubRetain(){
- stopMqttPub_R
  stopSubPub
+ stopMqttPub_R
 }
 
 case $1 in
@@ -241,7 +244,7 @@ case $1 in
      subPubRetain
      ;;
    *)
-     echo "Please input mqttsub or mqttpub or mqttclient"
+     echo "mqttClient.sh"
      ;;
 esac
 
