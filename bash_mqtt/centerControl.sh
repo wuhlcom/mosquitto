@@ -29,7 +29,7 @@ local_query=$sPath/logger.sh
 
 #记录进程和会话结果
 subLog(){ 
-  logPath=$sPath/rslogs/
+  logPath=$sPath/subLogs/
   ipaddr=$1
   proNum=$2
   sesNum=$3 
@@ -61,7 +61,6 @@ subLog(){
 
 #local pc sub
 localSub(){ 
-  subRs="0 0"
   $sPath/mqttClient.sh ${subCMD}
   sleep $waitForSession
 }
@@ -104,12 +103,10 @@ remoteSub(){
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
 	    #cp local mqtt.conf to remote client
-	    scp ${sPath}/mqtt.conf root@${ip}:${remote_dir} 
+	    #scp ${sPath}/mqtt.conf root@${ip}:${remote_dir} 
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
 	    newStart=`expr $sSubNum + $subNum \* $step`
 	    ssh -p $sshPort $rootusr@$ip "sed -i 's/sSubNum=${sSubNum}/sSubNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-
-	    sleep 2
 	    # ssh -t -p $sshPort $user@$ip "$remote_mqttClient"&
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCMD}"&
 	    sleep $waitForSession 
@@ -150,6 +147,7 @@ remoteQuery(){
 #远程订阅并记录结果
 remoteSQ(){
   remoteSub
+  sleep $waitForSession 
   remoteQuery
 }
 
@@ -214,7 +212,7 @@ mqttSubPubRemote(){
 	do
 	    num=0
             queryNum=1
-	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
+	    #scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id和pub id是唯一的 
 	    pubSubNewStart=`expr $pubSubSNum + $pubSubNum \* $step`
 	    subPubNewStart=`expr $subPubSNum + $subPubNum \* $step`
@@ -224,7 +222,7 @@ mqttSubPubRemote(){
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
             #必须加&
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subPubCMD}"&
-
+  	    sleep $waitForSession 
   	    while true
 	    do
            	num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubFName}|wc -l"`
@@ -272,7 +270,7 @@ retainLocal(){
 	num=0
         queryNum=1
 	subPubRetain
-	sleep 5
+  	sleep $waitForSession 
   	while true
 	    do
            	num=`cat ${sPath}/${subPubRFName}|wc -l`
@@ -306,7 +304,7 @@ retainRemote(){
 	do
 	    num=0
             queryNum=1
-	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
+	    #scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id和pub id是唯一的 
 	    RetainNewStart=`expr $pubRsNum + $pubRetainNum \* $step`
 	    ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${RetainNewStart}/g' ${remote_dir}/mqtt.conf"

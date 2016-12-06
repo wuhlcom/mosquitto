@@ -54,6 +54,16 @@ class MqClient
 	  end
 	end
 
+	def client_sub(host,topic,cid=nil,args={})
+	  fail 'topic must be string Array' unless topic.kind_of?(Array)
+	  client= clientobj(host,cid,args)
+	  puts "mqtt client '#{client.client_id}' conneted"
+	  client.subscribe(topic.join(","))
+	 # client.get do |topic_single,message|
+	#	puts "#{topic_single}:#{message}"
+	 # end
+	end
+
 
 	#client_pub publich message
 	#
@@ -70,4 +80,13 @@ class MqClient
 	def generate_cid(prefix='ruby',lengh=16)
 	   MQTT::Client.geneate_client_id(prefix,lenth)
 	end
+        
+        def disconnect
+	   client.disconnect
+	end
+	
+	def pub_disconn(host,topic,msg="",cid=nil,retain=false,qos=0,args={})
+	    client_pub_msg(host,topic,msg,cid,retain,qos,args)
+	    client.disconnect
+	end	
 end

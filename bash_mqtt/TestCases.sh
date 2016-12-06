@@ -65,5 +65,4 @@ testSubRetain(){
    fi
    stopRetainRemote
 }
-
 testSubRetain
