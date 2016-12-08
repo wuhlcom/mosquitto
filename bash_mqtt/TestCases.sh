@@ -65,4 +65,4 @@ testSubRetain(){
    fi
    stopRetainRemote
 }
-testSubRetain
+subAllContinue

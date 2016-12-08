@@ -12,13 +12,13 @@ source $sPath/tcpdump.sh
 echoFlag=true
 scp ${sPath}/mqtt.conf $rootusr@${srv_ip}:${remote_dir}
 #mosquitto_sub
-mqttSub(){
+sub(){
       subtopic=$1
       subid=$2
       if $mqttAuth;then
-          if [ -z "$3" ] || [ -z "$4" ] ;then
+         if [ -z "$3" ] || [ -z "$4" ] ;then
               echo "ERROR:Please input the mosquitto client usrname and password!"
-          fi
+         fi
          usr=$3
          passwd=$4
          subqos=$5
@@ -43,7 +43,7 @@ mqttSub(){
 }
 
 #mosquitto_sub
-mqtt_sub(){
+subLoop(){
 	if $capFlag;then
 	 cap
 	fi
@@ -59,7 +59,7 @@ mqtt_sub(){
 		do	
 			subTopic="$subTopicPre$i"
 			subID="$subIDPre$i"
-			mqttSub $subTopic $subID $defaultUsr $defaultPasswd $j
+			sub $subTopic $subID $defaultUsr $defaultPasswd $j
 			j=`expr $j + 1`
                         if [ $j -ge 3 ]; then
                                j=0
@@ -73,7 +73,7 @@ mqtt_sub(){
 		do	
 			subTopic="$subTopicPre$i"
 			subID="$subIDPre$i"
-			mqttSub $subTopic $subID $j
+			sub $subTopic $subID $j
 			j=`expr $j + 1`
 			if [ $j -ge 3 ]; then
 				j=0
@@ -86,22 +86,46 @@ mqtt_sub(){
 	#monitor_log subresult&
 	$sPath/logger.sh monitorlog&
 }
+subC(){
+      subtopic=$1
+      subid=$2
+      if [ -z "$3" ] || [ -z "$4" ] ;then
+            echo "ERROR:Please input the mosquitto client usrname and password!"
+      fi
+      
+      usr=$3
+      passwd=$4
+      subqos=$5
 
-subPerform(){
-	ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $subPersNum $subPereNum $subPerIDPre ${intf}-${cIP}-subPerform"
-	for i in `seq $subPersNum $subPereNum`
+      if [ -n "$6" ];then
+        count=1
+      else
+        count=$6
+      fi
+
+      mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $count&
+      if $echoFlag;then
+            echo client  \'$subid\' sub topic \'$subtopic\' usrname $usr passwd $passwd qos $subqos
+      fi
+} 
+
+subCLoop(){
+        ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $subCsNum $subCeNum $subCIDPre ${intf}-${cIP}-subCLoop"
+	:>${sPath}/${subCFName}
+	for i in `seq $subCsNum $subCeNum`
 	do	
-		subID="$subPerIDPre$i"
-		mqttSub $subPerTopic $subID $defaultUsr $defaultPasswd $j -C 1
+		subID="$subCIDPre$i"
+		subC $subCTopic $subID $defaultUsr $defaultPasswd $j 
 		j=`expr $j + 1`
 	        if [ $j -ge 3 ]; then
         	       j=0
 	        fi
+		echo `expr $i - $subCsNum + 1`>>${sPath}/${subCFName}	
 	done
 }
  
 #mqtt pub
-mqttPub(){
+pub(){
         pubtopic=$1
         pubmsg=$2
 	pubid=$3
@@ -123,12 +147,14 @@ mqttPub(){
 	fi
 }
 
-pubPerform(){
-	ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh 0 0 $pubPerID ${intf}-${cIP}-perPub"
-	mqttPub $subPerTopic $pubPerMsg $pubPerID $pubQos $defaultUsr $defaultPasswd
+#pub msg
+ubC(){
+	ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh 0 0 $pubCID ${intf}-${cIP}-pubC"
+	pub $subCTopic $pubCMsg $pubCID $pubQos $defaultUsr $defaultPasswd
 }
 
-mqtt_pub(){
+#大量发布
+pubLoop(){
 	pubTopicPre="mosquittoTopic"
 	pubMsgPre="mosquittoMSG"
 	pubIDPre="mosquittoPubId"
@@ -140,7 +166,7 @@ mqtt_pub(){
 			pubTopic="$pubTopicPre$i"
 			pubMsg="$pubMsgPre$i"
 			pubID="$pubIDPre$i"
-			mqttPub $pubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
+			pub $pubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
 		done
        else 
 		for i in `seq $sPubNum $ePubNum`
@@ -148,7 +174,7 @@ mqtt_pub(){
 			pubTopic="$pubTopicPre$i"
 			pubID="$pubIDPre$i"
 			pubMsg="$pubMsgPre$i"
-			mqttPub $pubTopic $pubID $pubMsg $pubQos
+			pub $pubTopic $pubID $pubMsg $pubQos
 		done
 	fi
 }
@@ -168,7 +194,7 @@ stopSubPub(){
 }
 
 #先订阅后发布，主题保持不变
-mqttSubPub(){
+subPub(){
 	echoFlag=false
 	if $capFlag;then
 	 cap
@@ -184,7 +210,7 @@ mqttSubPub(){
 		for i in `seq $pubSubSNum $pubSubENum`
 		do	
 			subID="$subIDPre$i"
-			mqttSub $subPubTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/${subPubFName}
+			sub $subPubTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/${subPubFName}
 			j=`expr $j + 1`
                         if [ $j -ge 3 ]; then
                                j=0
@@ -199,13 +225,13 @@ mqttSubPub(){
 		do
 			pubID="$pubIDPre$i"
 			pubMsg="$pubMsgPre$i"
-			mqttPub $subPubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
+			pub $subPubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
 		done
 	else
 		for i in `seq $pubSubSNum $pubSubENum`
 		do	
 			sid="$pubIDPre$i"
-			mqttSub $subPubTopic $sid $j>>$sPath/${subPubFName}
+			sub $subPubTopic $sid $j>>$sPath/${subPubFName}
 			j=`expr $j + 1`
 			if [ $j -ge 3 ]; then
 				j=0
@@ -217,13 +243,13 @@ mqttSubPub(){
 		do
 			pid="$pubIDPre$i"
 			msg="$subMsgPre$i"
-			mqttPub $subPubTopic $msg $pid $pubQos
+			pub $subPubTopic $msg $pid $pubQos
 		done
 	fi
 }
 
 #mqtt pub retain
-mqttPubR(){
+pubR(){
         pubtopic=$1
         pubmsg=$2
 	pubid=$3
@@ -237,7 +263,7 @@ mqttPubR(){
 }
 
 #plenty of mqtt pub retain msg
-mqttPub_R(){
+pubRLoop(){
   rPubIDPre="pubIDRetain"
   rPubTopicPre="pubTopicRetain"
   rPubMsgPre="pubMsgRetain"
@@ -248,7 +274,7 @@ mqttPub_R(){
     	rPubTopic="$rPubTopicPre${i}"
 	rPubMsg="$rPubMsgPre${i}"
 	rPubID="$rPubIDPre${i}"
-	mqttPubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd 
+	pubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd 
      done
   else  
      for i in `seq $pubRsNum $pubReNum`
@@ -256,13 +282,13 @@ mqttPub_R(){
        rPubTopic="$rPubTopicPre${i}"
        rPubMsg="$rPubMsgPre${i}"
        rPubID="$rPubIDPre${i}"
-       mqttPubR $rPubTopic $rPubMsg $rPubID 
+       pubR $rPubTopic $rPubMsg $rPubID 
      done
  fi
 }
 
 #mosquitto_sub retain msg
-mqttSub_R(){
+subRLoop(){
 	echoFlag=false
 	if $capFlag;then
 	 cap
@@ -278,7 +304,7 @@ mqttSub_R(){
 		do	
         	   rPubTopic="$rPubTopicPre${i}"
 		   rSubID="$rSubIDPre$i"
-  		   mqttSub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRFName}
+  		   sub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRFName}
 		   j=`expr $j + 1`
 		   if [ $j -ge 3 ]; then
 			j=0
@@ -289,7 +315,7 @@ mqttSub_R(){
 		do	
         	   rPubTopic="$rPubTopicPre${i}"
 		   rSubID="$rSubIDPre$i"
-  		   mqttSub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}
+  		   sub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}
 		   j=`expr $j + 1`
 		   if [ $j -ge 3 ]; then
 			j=0
@@ -320,7 +346,7 @@ subPubRetain(){
 	    rPubTopic="$rPubTopicPre${i}"
 	    rPubMsg="$rPubMsgPre${i}"
 	    rPubID="$rPubIDPre${i}"
-	    mqttPubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd 
+	    pubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd 
 	 done
 
 	 sleep $retainGap 
@@ -331,7 +357,7 @@ subPubRetain(){
 	       rPubTopic="$rPubTopicPre${i}"
 	       rSubID="$rSubIDPre$i"
 	       #必须加&
-	       mqttSub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRFName}&
+	       sub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRFName}&
 	       j=`expr $j + 1`
 	       if [ $j -ge 3 ]; then
 	        	j=0
@@ -343,7 +369,7 @@ subPubRetain(){
 	    rPubTopic="$rPubTopicPre${i}"
 	    rPubMsg="$rPubMsgPre${i}"
 	    rPubID="$rPubID${i}"
-	    mqttPubR $rPubTopic $rPubMsg $rPubID 
+	    pubR $rPubTopic $rPubMsg $rPubID 
 	done
 
 	sleep $retainGap 
@@ -353,7 +379,7 @@ subPubRetain(){
 	   rPubTopic="$rPubTopicPre${i}"
 	   rSubID="$rSubIDPre$i"
 	   #必须加&
-  	   mqttSub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}&
+  	   sub $rPubTopic $rSubID $j>>${sPath}/${subPubRFName}&
 	   j=`expr $j + 1`
 	   if [ $j -ge 3 ]; then
         	j=0
@@ -365,7 +391,7 @@ subPubRetain(){
 }
 
 #stop plenty of mqtt pub retain msg
-stopMqttPub_R(){
+stopPubR(){
  rPubTopicPre="pubTopicRetain"
  rPubIDPre="pubIDRetain"
  if $mqttAuth;then
@@ -387,30 +413,30 @@ stopMqttPub_R(){
 
 stopSubRetain(){
  stopSubPub
- stopMqttPub_R
+ stopPubR
 }
 
 case $1 in
-   "mqttsub")
-     mqtt_sub
+   "subloop")
+     subLoop
      ;;
-   "mqttpub")
-     mqtt_pub
+   "publoop")
+     pubLoop
      ;;
-   "stopsub")
+   "stopsubpub")
      stopSubPub
      ;;
    "subpub")
-     mqttSubPub
+     subPub
      ;;
-   "pubretain")
-     mqttPub_R
+   "pubrloop")
+     pubRLoop
      ;;
-   "subretain")
-     mqttSub_R
+   "subrloop")
+     subRLoop
      ;;
-   "stopretain")
-     stopMqttPub_R
+   "stoppubr")
+     stopPubR
      ;;
    "stopsubretain")
      stopSubRetain
@@ -418,8 +444,14 @@ case $1 in
    "subpubretain")
      subPubRetain
      ;;
+   "subcloop")
+     subCLoop
+     ;;
+   "pubc")
+     pubC
+     ;;
    *)
-     echo "mqttClient.sh"
+     #echo "mqttClient.sh"
      ;;
 esac
 

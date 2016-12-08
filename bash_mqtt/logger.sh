@@ -6,16 +6,20 @@
 sPath=`dirname $0`
 source $sPath/mqtt.conf 
 logPath=$sPath/logs/
+
+#查询cpu top
 top_cpu() {
  cpuinf=`top -bn 1|grep "Cpu"`
  echo  ${cpuinf}
 }
 
+#查询内存 top
 top_mem() {
  memin=`top -bn 1|grep "Mem"`
  echo  ${memin}
 }
 
+#查询内存 free
 meminfo() {
  mem=`free -m|grep -i "Mem"`
  mt=$(echo $mem|awk -F " " {'print $2'})
@@ -24,7 +28,7 @@ meminfo() {
  meminf="mem total:$mt used:$mu free:$mf"
  echo  ${meminf}
 }
-
+#查询swap free
 swapinfo() {
  swap=`free -m|grep -i "Swap"`
  st=$(echo $swap|awk -F " " {'print $2'})
@@ -34,6 +38,7 @@ swapinfo() {
  echo  ${swapinf}
 }
 
+#查询sub会话和进程，返回日志描述
 mqttinfo(){
   process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
@@ -45,37 +50,39 @@ mqttinfo(){
   echo ${mqttinf}
  }
 
+#查询sub会话和进程，只返回数量
 subResult(){
-  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   ip_port="${srv_ip}:${srv_port}"
-  session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
+  #session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
   session_num=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED|wc -l`
+  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   process_num=`expr $process_num - 1`
   echo ${process_num}
   echo ${session_num}
  }
-
+#服务端查询mqtt会话并返回日志描述格式结果
 srv_mqttinfo(){
  if [ -n $clientIP ];then
    srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
  else
-   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep ESTABLISHED|wc -l)
  fi
  #echo `date +"%Y-%m-%d %H:%M:%S"`>"$sPath"/srvResult
  #echo $srv_session>>"$sPath"/srvResult
  srv="mqtt server sesion num $srv_session"
  echo ${srv}
 }
-
+#查询服务端会话并返回数量
 srvResult(){
  if [ -n $clientIP ];then
    srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
  else
-   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep $clientIP|grep ESTABLISHED|wc -l)
+   srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port"|grep ESTABLISHED|wc -l)
  fi
  echo ${srv_session}
 }
 
+#服务端进程查询，返回日志描述格式结果
 srv_mqtt(){
  #proc=$(ps -ef|grep -i "dispatch\|topicroute\|mqtt_process\|access")
  #echo ${proc}
@@ -89,7 +96,7 @@ srv_mqtt(){
  fi
  echo ${srv_pro}
 }
-
+#服务端jps进程查询，返回日志描述格式结果
 srv_jps(){
  #jps=$(sudo jps)
  #echo -e ${jps} 
@@ -101,7 +108,7 @@ srv_jps(){
  fi
  echo ${pro}
 }
-
+#如果目录不存在创建目录
 createpath (){
  #create log file dir
  test -d $logPath||mkdir $logPath
@@ -191,6 +198,7 @@ getLastLogFileName()
     cd .. 
 }
 
+#客户端查询cpu,mem,swap,mqtt并写入日志
 write_mqtt_log(){
 	msg1=`top_cpu`
 	msg2=`meminfo`
@@ -225,6 +233,7 @@ monitor_log(){
 	  sleep $logGap
 	done
 }
+
 #监控服务端并生成日志
 smonitor_log(){
 	while true
@@ -240,16 +249,23 @@ smonitor_log(){
 	done
 }
 
-if [ "$1" = "monitorlog" ];then
-   monitor_log
-elif [ "$1" = "smonitorlog" ];then
-   smonitor_log
-elif [ "$1" = "subresult" ];then
-   subResult
-elif [ "$1" = "srvresult" ];then
-   srvResult
-elif [ "$1" = "test" ];then
-   write_log $2
-else
-  echo "logger.sh"  
-fi 
+case $1 in
+ "monitorlog")
+     monitor_log
+     ;;
+ "smonitorlog")
+     smonitor_log
+     ;;
+ "subresult")
+     subResult
+     ;;
+ "srvresult")
+     srvResult
+     ;;
+ "test")
+     write_log $2
+     ;;
+ *)
+  #echo $0
+  ;;
+esac
