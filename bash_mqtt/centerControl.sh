@@ -17,6 +17,7 @@ subStopCMD=stopsubpub
 subPubCMD=subpub
 retainCMD=subpubretain
 subCCMD=subcloop
+subCNoAccCMD=subcloopnoacc
 stopRetainCMD=stopsubretain
 sshPort=22
 subRs="0 0"
@@ -38,26 +39,27 @@ reportLog(){
   else 
 	ipaddr=$2
 	proNum=$3
-	sesNum=$4 
+	sesNum=$4
+        expect=$5 
 	#不能有空格，有空格会当成多个变量的值
-	total="Client_$ipaddr:预期mosquitto_sub数为${subNum}个，实际进程数${proNum}个，会话数${sesNum}"
+	total="Client_$ipaddr:预期mosquitto_sub数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
 	proRs=""
 	sesRs=""
 
-	  if [ "$proNum" -lt "$subNum" ];then
-	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,少于预期的${subNum}个,相差`expr $subNum - $proNum`个"
+	  if [ "$proNum" -lt "$expect" ];then
+	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,少于预期的${expect}个,相差`expr $expect - $proNum`个"
 	  fi
    
-	  if [ "$proNum" -gt "$subNum" ];then
-	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,多于预期的${subNum}个,相差`expr $proNum - $subNum`个,有重复的client"
+	  if [ "$proNum" -gt "$expect" ];then
+	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,多于预期的${expect}个,相差`expr $proNum - $expect`个,有重复的client"
 	  fi
 
-	  if [ "$sesNum" -lt "$subNum" ];then
-	    sesRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,少于预期的${subNum}个,相差`expr $subNum - $sesNum`个"
+	  if [ "$sesNum" -lt "$expect" ];then
+	    sesRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,少于预期的${expect}个,相差`expr $expect - $sesNum`个"
 	  fi
 
-	  if [ "$sesNum" -gt "$subNum" ];then
-	    proRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,多于预期的${subNum}个,相差`expr $sesNum - $subNum`个,有重复的client"
+	  if [ "$sesNum" -gt "$expect" ];then
+	    proRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,多于预期的${expect}个,相差`expr $sesNum - $exepct`个,有重复的client"
 	  fi
 
 	  write_log $total
@@ -97,7 +99,7 @@ queryLocal(){
   done
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
-  reportLog $reportPath $localPcIP $proNum1 $sesNum1
+  reportLog $reportPath $localPcIP $proNum1 $sesNum1 $subNum
 }
 
 #本地订阅并记录结果
@@ -154,7 +156,7 @@ queryRemote(){
    done
    proNum=`echo $subRs|awk -F " " '{print $1}'`
    sesNum=`echo $subRs|awk -F " " '{print $2}'`
-   reportLog $reportPath $ip $proNum $sesNum
+   reportLog $reportPath $ip $proNum $sesNum $subNum
    sumPro1=`expr $sumPro1 + $proNum`   
    sumSes1=`expr $sumSes1 + $sesNum`   
  done
@@ -202,18 +204,18 @@ queryContinue(){
         subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
         proNum=`echo $subRs|awk -F " " '{print $1}'`
         sesNum=`echo $subRs|awk -F " " '{print $2}'`
-        reportLog $reportPath $ip $proNum $sesNum
-        if $localPcFlag;then
-	    subRsLocal=$(${local_query} ${subRsCMD})
-            proNumLocal=`echo $subRsLocal|awk -F " " '{print $1}'`
-            sesNumLocal=`echo $subRsLocal|awk -F " " '{print $2}'`
-            reportLog $reportPath $localPcIP $proNum $sesNum
-            proNum=`expr $proNum + $proNumLocal`
-            sesNum=`expr $sesNum + $sesNumLocal`
-        fi
+        reportLog $reportPath $ip $proNum $sesNum $subNum
         sumPro2=`expr $sumPro2 + $proNum`   
         sumSes2=`expr $sumSes2 + $sesNum`   
     done
+    if $localPcFlag;then
+	    subRsLocal=$(${local_query} ${subRsCMD})
+            proNumLocal=`echo $subRsLocal|awk -F " " '{print $1}'`
+            sesNumLocal=`echo $subRsLocal|awk -F " " '{print $2}'`
+            reportLog $reportPath $localPcIP $proNum $sesNum $subNum
+            sumPro2=`expr $sumPro2 + $proNumLocal`
+            sumSes2=`expr $sumSes2 + $sesNumLocal`
+    fi
    
     len=${#ip_array[@]}
     if $localPcFlag;then
@@ -342,7 +344,7 @@ subPubQuLocal(){
     sleep $waitForSession
     while true
     do
-       	session_num=`cat ${sPath}/${subPubFName}|wc -l`
+       	session_num=`cat ${sPath}/${subPubRecieved}|wc -l`
        	if [ "$session_num" = "$sub_pub_num" ];then
 	    subRs=$(${local_query} ${subRsCMD})
             subRecieved="执行PC${localPcIP}预期订阅/发布总数为$sub_pub_num,实际数量为$session_num"
@@ -358,7 +360,7 @@ subPubQuLocal(){
    done
    proNum=`echo $subRs|awk -F " " '{print $1}'`
    sesNum=`echo $subRs|awk -F " " '{print $2}'`
-   reportLog $reportPath $localPcIP $proNum $sesNum
+   reportLog $reportPath $localPcIP $proNum $sesNum $sub_pub_num
    reportLog $reportPath $subRecived
    if [ "$sub_pub_num" -ne "$session_num" ];then
       value=`expr $sub_pub_num - $session_num`
@@ -410,7 +412,7 @@ subPubQuRemote(){
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
   	    while true
 	    do
-           	session_num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubFName}|wc -l"`
+           	session_num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRecieved}|wc -l"`
             	if [ "$session_num" = "$sub_pub_num" ];then
            	        subRsRemote=`ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}"`
 		        subRecievedR="远程PC${ip}预期订阅/发布数为$sub_pub_num,实际数量为$num"
@@ -426,7 +428,7 @@ subPubQuRemote(){
 	    done
 	    proNum=`echo $subRsRemote|awk -F " " '{print $1}'`
 	    sesNum=`echo $subRsRemote|awk -F " " '{print $2}'`
-	    reportLog $reportPath $ip $proNum $sesNum
+	    reportLog $reportPath $ip $proNum $sesNum $sub_pub_num
 	    reportLog $reportPath $subRecivedR
 
 	    if [ "$sub_pub_num" -ne "$num" ];then
@@ -471,7 +473,7 @@ retainQuLocal(){
   	sleep $waitForSession 
   	while true
         do
-           	num=`cat ${sPath}/${subPubRFName}|wc -l`
+           	num=`cat ${sPath}/${subPubRRecieved}|wc -l`
 	        if [ "$pubRetainNum" =  "$num" ];then
 		        retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRetainNum,实际数量为$num"
     		        break 
@@ -525,7 +527,7 @@ retainQuRemote(){
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
   	    while true
 	    do
-           	num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRFName}|wc -l"`
+           	num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRRecieved}|wc -l"`
             	if [ "$num" = "$pubRetainNum" ];then
 		        retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRetainNum,实际数量为$num"
     		        break 
@@ -580,15 +582,15 @@ subCLocal(){
 }
 
 #查询本地一次性订阅
-subCQueryLocal(){
+subCQuLocal(){
   reportPath=$sPath/subCLogs/
   subCProNum=0 
   subCSesNum=0
   i=0
   while true
   do
-	subCCount=`cat "${sPath/${subCFName}}"`
-	if [ "$subCCount" = "$subCNum" ];then
+	subCnumber=`cat "${sPath}/${subCFName}"`
+	if [ "$subCnumber" = "$subCNum" ];then
 	   subCRs=$(${local_query} $subRsCMD)
 	   break
 	fi
@@ -601,12 +603,12 @@ subCQueryLocal(){
   done
   subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
   subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
-  reportLog $reportPath $localPcIP $subCProNum $subCSesNum
+  reportLog $reportPath $localPcIP $subCProNum $subCSesNum $subCNum
 }
 #一次性订阅和查询
-subCQueryLocal(){
+subCQLocal(){
  subCLocal
- subCQueryLocal
+ subCQuLocal
 }
 #远程一性订阅
 subCRemote(){
@@ -619,9 +621,19 @@ subCRemote(){
      ssh -p $sshPort $rootusr@$ip "sed -i 's/subCsNum=${subCsNum}/subCsNum=${newStart}/g' ${remote_dir}/mqtt.conf"
      #远程客户机进行订阅
      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCCMD}"&
-     sleep $waitForSession
+     ((step++))
    done
-}  
+} 
+#添加一次用户后再使用 
+subCNoAccRemote(){
+   for ip in ${ip_array[*]}
+   do
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     #远程客户机进行订阅
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCNoAccCMD}"&
+   done
+}
+  
 #远程一性订阅查询
 subCQuRemote(){
    reportPath=$sPath/subCLogs/
@@ -650,7 +662,7 @@ subCQuRemote(){
      done
      proNum=`echo $subRs|awk -F " " '{print $1}'`
      sesNum=`echo $subRs|awk -F " " '{print $2}'`
-     reportLog $reportPath $ip $proNum $sesNum
+     reportLog $reportPath $ip $proNum $sesNum $subCNum
      sumPro=`expr $sumPro + $proNum`
      sumSes=`expr $sumSes + $sesNum`
   done
@@ -680,12 +692,229 @@ subCQRemote(){
  subCQuRemote
 }
 
-subCRepeat(){
- while [ "subC" ]
+subCQuContinue(){
+   msg=$1
+   reportPath=$sPath/subCContinueLogs/
+   reportLog $reportPath $msg
+   sumPro=0
+   sumSes=0
+   for ip in ${ip_array[*]}
+   do
+     num=0
+     queryNum=1
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     while true
+     do
+                sleep $waitForSession
+                num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCFName}|wc -l"`
+                if [ "$num" = "$subCNum" ];then
+                        subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+                        break
+                fi
+
+                if [ "$queryNum" = "$querySubCount"  ];then
+                        subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+                        break
+                fi
+                ((queryNum++))
+                sleep $querySubGap
+     done
+     proNum=`echo $subCRsR|awk -F " " '{print $1}'`
+     sesNum=`echo $subCRsR|awk -F " " '{print $2}'`
+     reportLog $reportPath $ip $proNum $sesNum $subCNum
+     sumPro=`expr $sumPro + $proNum`
+     sumSes=`expr $sumSes + $sesNum`
+  done
+
+  if $localPcFlag;then 
+      i=0
+      while true
+      do
+        subCnumber=`cat "${sPath}/${subCFName}"`
+        if [ "$subCnumber" = "$subCNum" ];then
+           subCRs=$(${local_query} $subRsCMD)
+           break
+        fi
+        if [ "$i" = "$querySubCount" ];then
+           subCRs=$(${local_query} $subRsCMD)
+           break
+        fi
+        ((i++))
+        sleep $querySubGap
+     done
+     subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
+     subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
+     reportLog $reportPath $localPcIP $subCProNum $subCSesNum $subCNum
+     sumPro=`expr $sumPro + $subCProNum`
+     sumSes=`expr $sumSes + $subCSesNum`
+  fi
+
+  len=${#ip_array[@]}
+  if $localPcFlag;then
+    len=`expr $len + 1`
+  fi
+  #多个客户端预期订阅/发布总数
+  expectNum=`expr $len \* $subCNum`
+  if $localPcFlag;then
+     if [ "$sumPro" = "$expectNum" ];then
+        proTotal="预期订阅总process数为$expectNum,实际数量为$sumPro"
+     else
+        value=`expr $expectNum - $sumPro`
+        proTotal="预期订阅总process数为$expectNum,实际数量为$sumPro,相差${value}"
+     fi
+
+     reportLog $reportPath $proTotal
+     if [ "$sumSes" = "$expectNum" ];then
+       sesTotal="预期订阅总session数为$expectNum,实际数量为$sumSes"
+     else
+       value=`expr $expectNum - $sumSes`
+       sesTotal="预期订阅总session数为$expectNum,实际数量为$sumSes,相差${value}"
+     fi
+     reportLog $reportPath $sesTotal
+  else
+     if [ "$sumPro" = "$expectNum" ];then
+        proTotal="远程预期订阅总process数为$expectNum,实际数量为$sumPro"
+     else
+        value=`expr $expectNum - $sumPro`
+        proTotal="远程预期订阅总process数为$expectNum,实际数量为$sumPro,相差${value}"
+     fi
+
+     reportLog $reportPath $proTotal
+     if [ "$sumSes" = "$expectNum" ];then
+       sesTotal="远程预期订阅总session数为$expectNum,实际数量为$sumSes"
+     else
+       value=`expr $expectNum - $sumSes`
+       sesTotal="远程预期订阅总session数为$expectNum,实际数量为$sumSes,相差${value}"
+     fi
+     reportLog $reportPath $sesTotal
+ fi
+}
+
+unsubCQuContinue(){
+   msg=$1
+   reportPath=$sPath/subCContinueLogs/
+   reportLog $reportPath $msg
+   sumPro=0
+   sumSes=0
+   zero=0
+   for ip in ${ip_array[*]}
+   do
+     queryNum=1
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     while true
+     do
+                sleep $waitForSession
+                subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+                proNum=`echo $subCRsR|awk -F " " '{print $1}'`
+                if [ "$proNum" = "$zero" ];then
+                        break
+                fi
+                if [ "$queryNum" = "$querySubCount"  ];then
+                        subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+                        break
+                fi
+                ((queryNum++))
+     done
+     proNum=`echo $subCRsR|awk -F " " '{print $1}'`
+     sesNum=`echo $subCRsR|awk -F " " '{print $2}'`
+     reportLog $reportPath $ip $proNum $sesNum $zero 
+     sumPro=`expr $sumPro + $proNum`
+     sumSes=`expr $sumSes + $sesNum`
+  done
+
+  if $localPcFlag;then 
+      i=0
+      while true
+      do
+        subCRs=$(${local_query} $subRsCMD)
+        subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
+        if [ "$subCProNum" = "$zero" ];then
+           break
+        fi
+
+        if [ "$i" = "$querySubCount" ];then
+           subCRs=$(${local_query} $subRsCMD)
+           break
+        fi
+        ((i++))
+        sleep $querySubGap
+     done
+     subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
+     subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
+     reportLog $reportPath $localPcIP $subCProNum $subCSesNum $zero
+     sumPro=`expr $sumPro + $subCProNum`
+     sumSes=`expr $sumSes + $subCSesNum`
+  fi
+
+  if $localPcFlag;then
+     if [ "$sumPro" = "$zero" ];then
+        proTotal="预期订阅总process数为$zero,实际数量为$sumPro"
+     else
+        value=`expr $sumPro-$zero`
+        proTotal="预期订阅总process数为$zero,实际数量为$sumPro,相差${value}"
+     fi
+     reportLog $reportPath $proTotal
+
+     if [ "$sumSes" = "$zero" ];then
+       sesTotal="预期订阅总session数为$zero,实际数量为$sumSes"
+     else
+       value=`expr $sumSes - $zero`
+       sesTotal="预期订阅总session数为$zero,实际数量为$sumSes,相差${value}"
+     fi
+     reportLog $reportPath $sesTotal
+  else
+     if [ "$sumPro" = "$zero" ];then
+        proTotal="远程预期订阅总process数为$zero,实际数量为$sumPro"
+     else
+        value=`expr $sumPro - $zero`
+        proTotal="远程预期订阅总process数为$zero,实际数量为$sumPro,相差${value}"
+     fi
+     reportLog $reportPath $proTotal
+
+     if [ "$sumSes" = "$zero" ];then
+       sesTotal="远程预期订阅总session数为$zero,实际数量为$sumSes"
+     else
+       value=`expr $sumSes - $zero`
+       sesTotal="远程预期订阅总session数为$zero,实际数量为$sumSes,相差${value}"
+     fi
+     reportLog $reportPath $sesTotal
+ fi
+}
+
+#testcase 3
+subCcontinue(){
+ k=1
+ spent=0
+
+ #第一调用需创建账户
+ if $localPcFlag;then
+     subCLocal
+ fi
+
+ subCRemote
+ msg="====================订阅后第${k}次查询订阅情况======================="
+ subCQuContinue $msg
+ pubC
+ sleep $pubCWait 
+ msg="====================取消订阅后第${k}次查询订阅情况===================="
+ subCQuContinue $msg
+ 
+ #后续调用不再创建账户
+ while [ "$spent" -le "$subCTime" ]
  do
-         subCQLocal
-	 subCQRemote
-	 pubC 
+      ((k++))
+       if $localPcFlag;then
+         subCLoopNoAcc
+       fi
+       subCNoAccRemote
+       msg="====================订阅后第${k}次查询订阅情况======================="
+       subCQuContinue $msg
+       pubCNoAcc
+       sleep $pubCWait 
+       msg="====================取消订阅后第${k}次查询订阅情况===================="
+       unsubCQuContinue $msg
+       sleep $subCGap
+       spent=`expr $k \* $subCGap`
  done
 }
 

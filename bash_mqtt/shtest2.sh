@@ -11,4 +11,11 @@ fun2(){
   echo $param2
 }
 
-fun2
+#fun2
+fun3(){
+ a=false
+ if $a;then
+   echo "xx"
+ fi
+}
+fun3
