@@ -347,7 +347,8 @@ subFixAll(){
         subFixLogPath=$sPath/subFixLogs/
         subFixRsLogPath=$sPath/subFixRsLogs/
 	count=1
-        finalNum=0
+        realNum=0
+        skipTime=0
         subFixRemote
         if $localPcFlag;then
                 subFixLocal
@@ -361,16 +362,19 @@ subFixAll(){
 
        while true 
        do
-        msg="第${count}次查询订阅消息结果"
-        finalNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
-        if [ "$finalNum" = "$subFixCount" ];then
-           break
-        fi
+         msg="第${count}次查询订阅消息结果"
+         finalNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
+         if [ "$realNum" -ge "$subFixCount" ];then
+            break
+         fi
 
-        if [ "$count" = "$subFixQueryMax" ];then
+         if [ "$skipTime" = "$subFixQueryTime" ];then
 		break
-        fi
-	((count++))
+         fi
+
+         sleep $subFixGap
+         skipTime=`expr $subFixGap \* $count` 
+	 ((count++))
       done
 
       stopSubRemote
