@@ -65,6 +65,9 @@ testSubRetain(){
    fi
    stopRetainRemote
 }
-#subAllContinue
+
+#subAll
 #subCQLocal
-subCcontinue
+#subCcontinue
+#subFixLocal
+subFixAll

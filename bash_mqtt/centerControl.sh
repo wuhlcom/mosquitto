@@ -6,12 +6,12 @@ sPath=`dirname $0`
 source $sPath/mqttClient.sh
 source $sPath/logger.sh
 
-rootusr="root" 
-remote_dir="/home/zhilu/mosquitto/bash_mqtt"
 remote_mqttClient=$remote_dir/mqttClient.sh
 remote_query=$remote_dir/logger.sh
 
 subCMD=subloop  
+subFixCMD=subfix  
+pubFixCMD=pubfix
 subRsCMD=subresult
 subStopCMD=stopsubpub
 subPubCMD=subpub
@@ -75,17 +75,20 @@ subLocal(){
 
 #查询本地订阅结果
 queryLocal(){
+   reportPath=$1
+   fileName=$2
+   exprNum=$3
    proNum1=0
    sesNum1=0
-   reportPath=$sPath/subLogs/
+   #reportPath=$sPath/subLogs/
    sleep $waitForSession
    i=0
    while true
    do
-     subLoopRs=`cat "${sPath}/${subFName}"`
-     mqttSubNum=`echo $subLoopRs|awk -F " " '{print $3}'`
+     subRsNum=`cat "${sPath}/${fileName}"`
+     #mqttSubNum=`echo $subRsNum|awk -F " " '{print $3}'`
      #订阅完成则查询订阅结果
-     if [ "$mqttSubNum" = "$subNum" ];then
+     if [ "$subRsNum" = "$exprNum" ];then
        subRs=$(${local_query} ${subRsCMD})
        break
      fi
@@ -99,13 +102,14 @@ queryLocal(){
   done
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
-  reportLog $reportPath $localPcIP $proNum1 $sesNum1 $subNum
+  reportLog $reportPath $localPcIP $proNum1 $sesNum1 $exprNum
 }
 
 #本地订阅并记录结果
 subQuLocal(){
  subLocal
- queryLocal
+ subLogPath=$sPath/subLogs/
+ queryLocal $subLogPath $subFName $subNum
 }
 
 #本地下达指令让远程机器进行订阅
@@ -113,26 +117,25 @@ subRemote(){
 	step=1
 	for ip in ${ip_array[*]}  
 	do 
-	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
-	    #cp local mqtt.conf to remote client
-	    #scp ${sPath}/mqtt.conf root@${ip}:${remote_dir} 
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
 	    newStart=`expr $sSubNum + $subNum \* $step`
 	    ssh -p $sshPort $rootusr@$ip "sed -i 's/sSubNum=${sSubNum}/sSubNum=${newStart}/g' ${remote_dir}/mqtt.conf"
 	    # ssh -t -p $sshPort $user@$ip "$remote_mqttClient"&
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCMD}"&
-	    sleep $waitForSession 
            ((step++))
 	done  
 }
 
 #本地下达指令查询远程订阅结果
 queryRemote(){
+ reportPath=$1
+ filenName=$2
+ exprNum=$3
  i=0
  sumPro1=0
  sumSes1=0
- reportPath=$sPath/subLogs/
+ #reportPath=$sPath/subLogs/
  for ip in ${ip_array[*]}
   do
     #排除本地IP
@@ -140,29 +143,29 @@ queryRemote(){
     while true
     do
       sleep $waitForSession
-      subResult=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subFName}"`
-      pcSubNum=`echo $subResult|awk -F " " '{print $3}'`
+      subRsNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+      #pcSubNum=`echo $subResult|awk -F " " '{print $3}'`
       #订阅完成则查询订阅结果
-      if [ "$pcSubNum" = "$subNum" ];then
+      if [ "$subRsNum" = "$exprNum" ];then
          subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
          break
       fi
       ((i++))
       #订阅超时后也要订阅结果
-      if [ "$i" = 10 ];then
+      if [ "$i" = "$querySubCount" ];then
         subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
 	break
       fi
    done
    proNum=`echo $subRs|awk -F " " '{print $1}'`
    sesNum=`echo $subRs|awk -F " " '{print $2}'`
-   reportLog $reportPath $ip $proNum $sesNum $subNum
+   reportLog $reportPath $ip $proNum $sesNum $exprNum
    sumPro1=`expr $sumPro1 + $proNum`   
    sumSes1=`expr $sumSes1 + $sesNum`   
  done
  len=${#ip_array[@]}
  #多个客户端预期订阅/发布总数
- expectNum=`expr $len \* $subNum`
+ expectNum=`expr $len \* $exprNum`
 
  if [ "$sumPro1" = "$expectNum" ];then
     proTotal="远程预期订阅总process数为$expectNum,实际数量为$sumPro1"
@@ -265,7 +268,8 @@ queryContinue(){
 #远程订阅并记录结果
 subQuRemote(){
   subRemote
-  queryRemote
+  subLogPath=$sPath/subLogs/
+  queryRemote $subLogPath $subFName $subNum
 }
 
 #停止远程订阅
@@ -278,6 +282,103 @@ stopSubRemote(){
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"&
 	done  
 }
+
+queryFix(){
+        reportPath=$1
+        msg=$2
+        fileName=$3
+        reportLog $reportPath $msg 
+
+        sum=0
+        subMsgRs=0
+        subMsgRs=`cat $sPath/$fileName|wc -l`
+        message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
+        reportLog $reportPath $message
+ 
+        sum=`expr $sum + $subMsgRs`
+        for ip in ${ip_array[*]}
+        do
+	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+             message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
+             reportLog $reportPath $message 
+             sum=`expr $sum + $subMsgRs`
+	done
+        
+        message="预期订阅和发布交互数为${subFixCount}查询到当前订阅到的消息总数为$sum"
+        reportLog $reportPath $message 
+        echo ${sum}
+}
+
+subFixLocal(){
+ subFix
+}
+
+subFixRemote(){
+        step=1
+        for ip in ${ip_array[*]}
+        do
+            if [ "$ip" = "$localPcIP" ];then continue;fi
+            #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
+            newStart=`expr $subFixSNum + $subFixNum \* $step`
+            ssh -p $sshPort $rootusr@$ip "sed -i 's/subFixSNum=${subFixSNum}/subFixSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subFixCMD}"&
+	    ((step++))
+        done
+}
+
+pubFixLocal(){
+ pubFix
+}
+
+pubFixRemote(){
+        step=1
+        for ip in ${ip_array[*]}
+        do
+            if [ "$ip" = "$localPcIP" ];then continue;fi
+            #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
+            newStart=`expr $pubFixSNum + $pubFixNum \* $step`
+            ssh -p $sshPort $rootusr@$ip "sed -i 's/pubFixSNum=${pubFixSNum}/pubFixSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${pubFixCMD}"&
+            ((step++))
+        done
+}
+
+subFixAll(){
+        subFixLogPath=$sPath/subFixLogs/
+        subFixRsLogPath=$sPath/subFixRsLogs/
+	count=1
+        finalNum=0
+        subFixRemote
+        if $localPcFlag;then
+                subFixLocal
+                expectNum=`expr $expectNum + $subNum`
+ 		queryLocal $subFixLogPath $subFixFName $subFixNum
+        fi
+        queryRemote $subFixLogPath $subFixFName $subFixNum
+        
+        pubFixLocal
+        pubFixRemote
+
+       while true 
+       do
+        msg="第${count}次查询订阅消息结果"
+        finalNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
+        if [ "$finalNum" = "$subFixCount" ];then
+           break
+        fi
+
+        if [ "$count" = "$subFixQueryMax" ];then
+		break
+        fi
+	((count++))
+      done
+
+      stopSubRemote
+      if $localPcFlag;then
+          stopSubPub
+      fi
+}
+
 #testcase 1
 subAll(){
         proNum1=0
@@ -850,7 +951,7 @@ unsubCQuContinue(){
      if [ "$sumPro" = "$zero" ];then
         proTotal="预期订阅总process数为$zero,实际数量为$sumPro"
      else
-        value=`expr $sumPro-$zero`
+        value=`expr $sumPro - $zero`
         proTotal="预期订阅总process数为$zero,实际数量为$sumPro,相差${value}"
      fi
      reportLog $reportPath $proTotal
@@ -897,8 +998,8 @@ subCcontinue(){
  pubC
  sleep $pubCWait 
  msg="====================取消订阅后第${k}次查询订阅情况===================="
- subCQuContinue $msg
- 
+ unsubCQuContinue $msg
+
  #后续调用不再创建账户
  while [ "$spent" -le "$subCTime" ]
  do
