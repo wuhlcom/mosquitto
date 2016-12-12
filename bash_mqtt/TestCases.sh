@@ -72,11 +72,11 @@ testSubRetain(){
 #subFixLocal
 #subFixAll
 #subFixRemote
-#subCPubR
+subCPubR
 
 
 #pubRetain
 #queryPubRLocal
-queryPubRRemote
+#queryPubRRemote
 #querySubCR
 #subCRetain

@@ -1075,20 +1075,20 @@ reportPubLog(){
 }
 
 queryPubRLocal(){
- reportPath=$sPath/pubRNumberLogs/
+ reportPath=${sPath}/pubRNumberLogs/
  i=0
  pubrNum=0
  if $localPcFlag;then
     while true
     do
       sleep $waitForSession
-      pubrNum=`cat $sPath/$pubRFName`
+      pubrNum=`cat ${sPath}/${pubRFName}`
       if [ "$pubrNum" = "$pubRNum" ];then
          break
       fi
       
       if [ "$i" = "$querySubCount" ];then
-        pubrNum=`cat $sPath/$pubRFName`  
+        pubrNum=`cat ${sPath}/${pubRFName}`  
         break
       fi
      ((i++))
@@ -1146,7 +1146,7 @@ querySubCR(){
     while true
     do
       sleep $waitForSession
-      subpubrNum=`cat $sPath/$subCPubRRecieved`  
+      subpubrNum=`cat ${sPath}/${subCPubRRecieved}|wc -l`  
       if [ "$subpubrNum" = "$pubRNum" ];then
          break
       fi
@@ -1160,7 +1160,7 @@ querySubCR(){
     msg="本地PC${localPcIP}预期收到保留消息${pubRNum},实际收到${subpubrNum}"
     reportPubLog $reportPath $msg
     sum=`expr $sum + $subpubrNum`
-    expectNum=`$expectNum + $reNum`
+    expectNum=`expr $expectNum + $subpubrNum`
  fi
 
  for ip in ${ip_array[*]}
@@ -1169,7 +1169,7 @@ querySubCR(){
     while true
     do
       sleep $waitForSession
-      subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}"`
+      subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}|wc -l"`
       if [ "$subpubrNum" = "$pubRNum" ];then
          break
       fi
@@ -1185,8 +1185,8 @@ querySubCR(){
     sum=`expr $sum + $subpubrNum`
  done
  len=${#ip_array[*]}
- reNum=`expr $len \* $reNum`
- expectNum=`$expectNum + $reNum`
+ reNum=`expr $len \* $pubRNum`
+ expectNum=`expr $expectNum + $reNum`
  msg="总共预期收到保留消息${expectNum},实际收到${sum}"
  reportPubLog $reportPath $msg
 }
