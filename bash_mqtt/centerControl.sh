@@ -10,15 +10,17 @@ remote_mqttClient=$remote_dir/mqttClient.sh
 remote_query=$remote_dir/logger.sh
 
 subCMD=subloop  
+subCRCMD=subcrloop  
 subFixCMD=subfix  
 pubFixCMD=pubfix
 subRsCMD=subresult
 subStopCMD=stopsubpub
 subPubCMD=subpub
-retainCMD=subpubretain
 subCCMD=subcloop
 subCNoAccCMD=subcloopnoacc
-stopRetainCMD=stopsubretain
+retainCMD=subpubr
+pubRCMD=pubrloop
+stopRetainCMD=stopsubpubr
 sshPort=22
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
@@ -40,26 +42,31 @@ reportLog(){
 	ipaddr=$2
 	proNum=$3
 	sesNum=$4
-        expect=$5 
+        expect=$5
+        if [ "-z" $6 ];then
+        client_type=mosquitto_sub 
+	else
+        client_type=$6 
+	fi
 	#不能有空格，有空格会当成多个变量的值
-	total="Client_$ipaddr:预期mosquitto_sub数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
+	total="Client_$ipaddr:预期${client_type}数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
 	proRs=""
 	sesRs=""
 
 	  if [ "$proNum" -lt "$expect" ];then
-	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,少于预期的${expect}个,相差`expr $expect - $proNum`个"
+	    proRs="Client_$ipaddr:实际上有${proNum}个${client_type}进程,少于预期的${expect}个,相差`expr $expect - $proNum`个"
 	  fi
    
 	  if [ "$proNum" -gt "$expect" ];then
-	    proRs="Client_$ipaddr:实际上有${proNum}个mosquitto_sub进程,多于预期的${expect}个,相差`expr $proNum - $expect`个,有重复的client"
+	    proRs="Client_$ipaddr:实际上有${proNum}个${client_type}进程,多于预期的${expect}个,相差`expr $proNum - $expect`个,有重复的client"
 	  fi
 
 	  if [ "$sesNum" -lt "$expect" ];then
-	    sesRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,少于预期的${expect}个,相差`expr $expect - $sesNum`个"
+	    sesRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,少于预期的${expect}个,相差`expr $expect - $sesNum`个"
 	  fi
 
 	  if [ "$sesNum" -gt "$expect" ];then
-	    proRs="Client_$ipaddr:实际上有${sesNum}个mosquitto_sub会话,多于预期的${expect}个,相差`expr $sesNum - $exepct`个,有重复的client"
+	    proRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,多于预期的${expect}个,相差`expr $sesNum - $exepct`个,有重复的client"
 	  fi
 
 	  write_log $total
@@ -117,6 +124,7 @@ subRemote(){
 	step=1
 	for ip in ${ip_array[*]}  
 	do 
+	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
 	    newStart=`expr $sSubNum + $subNum \* $step`
@@ -291,21 +299,24 @@ queryFix(){
 
         sum=0
         subMsgRs=0
-        subMsgRs=`cat $sPath/$fileName|wc -l`
-        message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
-        reportLog $reportPath $message
+        
+        if $localPcFlag;then 
+          subMsgRs=`cat $sPath/$fileName|wc -l`
+          message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
+          reportLog $reportPath $message
+          sum=`expr $sum + $subMsgRs`
+        fi
  
-        sum=`expr $sum + $subMsgRs`
         for ip in ${ip_array[*]}
         do
-	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
              message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
              reportLog $reportPath $message 
              sum=`expr $sum + $subMsgRs`
 	done
         
         message="预期订阅和发布交互数为${subFixCount}查询到当前订阅到的消息总数为$sum"
-        reportLog $reportPath $message 
+        reportLog $reportPath $message
         echo ${sum}
 }
 
@@ -317,11 +328,12 @@ subFixRemote(){
         step=1
         for ip in ${ip_array[*]}
         do
+	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
             if [ "$ip" = "$localPcIP" ];then continue;fi
-            #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
+            #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的
             newStart=`expr $subFixSNum + $subFixNum \* $step`
             ssh -p $sshPort $rootusr@$ip "sed -i 's/subFixSNum=${subFixSNum}/subFixSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subFixCMD}"&
+            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subFixCMD}"
 	    ((step++))
         done
 }
@@ -352,7 +364,6 @@ subFixAll(){
         subFixRemote
         if $localPcFlag;then
                 subFixLocal
-                expectNum=`expr $expectNum + $subNum`
  		queryLocal $subFixLogPath $subFixFName $subFixNum
         fi
         queryRemote $subFixLogPath $subFixFName $subFixNum
@@ -363,7 +374,8 @@ subFixAll(){
        while true 
        do
          msg="第${count}次查询订阅消息结果"
-         finalNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
+         realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
+         echo $realNum
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
@@ -488,7 +500,7 @@ subPubRemote(){
 	    session_num=0
             queryNum=1
 	    subRecievedR=""
-	    #scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
+	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id和pub id是唯一的 
 	    pubSubNewStart=`expr $pubSubSNum + $pubSubNum \* $step`
 	    subPubNewStart=`expr $subPubSNum + $subPubNum \* $step`
@@ -566,7 +578,7 @@ subpubQuRemote(){
 
 #local pub retain,then sub them
 retainLocal(){
-   subPubRetain
+   subPubR
 }
 
 #local pub retain,then sub them
@@ -579,8 +591,8 @@ retainQuLocal(){
   	while true
         do
            	num=`cat ${sPath}/${subPubRRecieved}|wc -l`
-	        if [ "$pubRetainNum" =  "$num" ];then
-		        retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRetainNum,实际数量为$num"
+	        if [ "$pubRNum" =  "$num" ];then
+		        retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRNum,实际数量为$num"
     		        break 
 		fi
 
@@ -591,9 +603,9 @@ retainQuLocal(){
               	sleep $querySubGap
        done
        reportLog $reportPath $retainRs
-       if [ "$pubRetainNum" -ne "$num" ];then
-         diffvalue=`expr $pubRetainNum - $num`
-         retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRetainNum,实际数量为$num,相差${diffvalue}"
+       if [ "$pubRNum" -ne "$num" ];then
+         diffvalue=`expr $pubRNum - $num`
+         retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRNum,实际数量为$num,相差${diffvalue}"
 	 reportLog $reportPath $retainRs
        fi
 }
@@ -609,7 +621,8 @@ retainRemote(){
 	for ip in ${ip_array[*]}  
 	do
 	    #修改配置文件中的值,保证每台机器上的mosquitto_sub的id和pub id是唯一的 
-	    retainNewStart=`expr $pubRsNum + $pubRetainNum \* $step`
+	    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
+	    retainNewStart=`expr $pubRsNum + $pubRNum \* $step`
 	    ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${retainNewStart}/g' ${remote_dir}/mqtt.conf"
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
@@ -633,8 +646,8 @@ retainQuRemote(){
   	    while true
 	    do
            	num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRRecieved}|wc -l"`
-            	if [ "$num" = "$pubRetainNum" ];then
-		        retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRetainNum,实际数量为$num"
+            	if [ "$num" = "$pubRNum" ];then
+		        retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRNum,实际数量为$num"
     		        break 
 		fi
 
@@ -646,9 +659,9 @@ retainQuRemote(){
 	    done
 
             reportLog $reportPath $retainRsR
-	    if [ "$pubRetainNum" -ne "$num" ];then
-            	diffvalue=`expr $pubRetainNum - $num`
-		retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRetainNum,实际数量为$num,相差${diffvalue}"
+	    if [ "$pubRNum" -ne "$num" ];then
+            	diffvalue=`expr $pubRNum - $num`
+		retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRNum,实际数量为$num,相差${diffvalue}"
 	        reportLog $reportPath $retainRsR
 	    fi
 
@@ -658,7 +671,7 @@ retainQuRemote(){
  
         len=${#ip_array[@]} 
         #多个客户端预期订阅/发布总数
-        expectNum=`expr $len \* $pubRetainNum`
+        expectNum=`expr $len \* $pubRNum`
 
         if [ "$sum" = "$expectNum" ];then
 	        retainTotal="远程预期订阅保留消息总数为$expectNum,实际数量为$sum"       
@@ -681,6 +694,7 @@ stopRetainRemote(){
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${stopRetainCMD}"&
 	done
 }
+
 #本地一次性订阅
 subCLocal(){
  $sPath/mqttClient.sh ${subCCMD}
@@ -720,6 +734,7 @@ subCRemote(){
    step=1
    for ip in ${ip_array[*]}
    do
+     scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
      if [ "$ip" = "$localPcIP" ];then continue;fi
      newStart=`expr $subCsNum + $subCNum \* $step`
      #修改远程客户机创建客户端的范围
@@ -1023,4 +1038,166 @@ subCcontinue(){
  done
 }
 
+pubRetain(){
+ step=1
+ if $localPcFlag;then
+    pubRLoop
+ fi  
+ for ip in ${ip_array[*]}
+ do
+    scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir} 
+    if [ "$ip" = "$localPcIP" ];then continue;fi
+     #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
+     newStart=`expr $pubRsNum + $pubRNum \* $step`
+     ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${pubRCMD}"&
+    ((step++))
+ done
+}
+
+reportPubLog(){
+  logPath=$1
+  if [ "$#" = 2 ];then
+    message=$2
+    write_log $message
+  else
+        ipaddr=$2
+        pubnum=$3
+        expect=$4
+        total="Client_$ipaddr:预期mosquitto_pub数为${expect}个，实际数${pubnum}个"
+        pubrRs=""
+        if [ "$pubnum" -lt "$expect" ];then
+           pubrRs="Client_$ipaddr:实际上有${pubnum}个mosquitto_pub个,少于预期的${expect}个,相差`expr $expect - $pubnum`个"
+        fi
+
+  fi
+  write_log $pubrRs
+}
+
+queryPubRLocal(){
+ reportPath=$sPath/pubRNumberLogs/
+ i=0
+ pubrNum=0
+ if $localPcFlag;then
+    while true
+    do
+      sleep $waitForSession
+      pubrNum=`cat $sPath/$pubRFName`
+      if [ "$pubrNum" = "$pubRNum" ];then
+         break
+      fi
+      
+      if [ "$i" = "$querySubCount" ];then
+        pubrNum=`cat $sPath/$pubRFName`  
+        break
+      fi
+     ((i++))
+    done  
+ fi
+ reportPubLog $reportPath $localPcIP $pubrNum $pubRNum 
+}
+ 
+queryPubRRemote(){
+ reportPath=$sPath/pubRNumberLogs/
+ for ip in ${ip_array[*]}
+ do
+    i=0
+    pubrNum=0
+    while true
+    do
+      sleep $waitForSession
+      pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${pubRFName}"`
+      if [ "$pubrNum" = "$pubRNum" ];then
+         break
+      fi
+      
+      if [ "$i" = "$querySubCount" ];then
+	 pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${pubRName}"`
+        break
+      fi
+    done  
+    reportPubLog $reportPath $ip $pubrNum $pubRNum 
+ done 
+}
+
+subCRetain(){
+ #step=1
+ if $localPcFlag;then
+    subCRLoop
+ fi
+ 
+ for ip in ${ip_array[*]}
+ do
+     # scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     #newStart=`expr $pubRsNum + $pubRNum \* $step`
+     #ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCRCMD}"
+     #((step++))
+ done
+}
+
+querySubCR(){
+ reportPath=$sPath/subCPubRLogs/  
+ sum=0
+ expectNum=0
+ if $localPcFlag;then
+    i=0
+    while true
+    do
+      sleep $waitForSession
+      subpubrNum=`cat $sPath/$subCPubRRecieved`  
+      if [ "$subpubrNum" = "$pubRNum" ];then
+         break
+      fi
+      
+      if [ "$i" = "$querySubCount" ];then
+        subpubrNum=`cat $sPath/$subCPubRRecieved`  
+        break
+      fi
+     ((i++))
+    done 
+    msg="本地PC${localPcIP}预期收到保留消息${pubRNum},实际收到${subpubrNum}"
+    reportPubLog $reportPath $msg
+    sum=`expr $sum + $subpubrNum`
+    expectNum=`$expectNum + $reNum`
+ fi
+
+ for ip in ${ip_array[*]}
+ do
+    i=0
+    while true
+    do
+      sleep $waitForSession
+      subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}"`
+      if [ "$subpubrNum" = "$pubRNum" ];then
+         break
+      fi
+      
+      if [ "$i" = "$querySubCount" ];then
+	 subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}"`
+        break
+      fi
+      ((i++))
+    done  
+    msg="远程PC${ip}预期收到保留消息${pubRNum},实际收到${subpubrNum}"
+    reportPubLog $reportPath $msg
+    sum=`expr $sum + $subpubrNum`
+ done
+ len=${#ip_array[*]}
+ reNum=`expr $len \* $reNum`
+ expectNum=`$expectNum + $reNum`
+ msg="总共预期收到保留消息${expectNum},实际收到${sum}"
+ reportPubLog $reportPath $msg
+}
+
+subCPubR(){
+ pubRetain
+ queryPubRLocal
+ queryPubRRemote
+ subCRetain
+ querySubCR
+ stopRetainRemote
+ stopSubPubR
+}
  

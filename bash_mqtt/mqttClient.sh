@@ -141,11 +141,13 @@ subC(){
 } 
 
 subCLoopNoAcc(){
+        echoFlag=false
         j=0
+        :>$sPath/$subCRecived
         for i in `seq $subCsNum $subCeNum`
         do
                 subID="$subCIDPre$i"
-                subC $subCTopic $subID $defaultUsr $defaultPasswd $j
+                subC $subCTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/$subCRecived
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0
@@ -161,6 +163,29 @@ subCLoop(){
    subCLoopNoAcc
 }
  
+subCRNoAcc(){
+        echoFlag=false
+        j=0
+        :>${sPath}/${subCPubRRecieved}
+        for i in `seq $pubRsNum $pubReNum`
+        do
+                rSubID="$rSubIDPre$i"
+                rSubCTopic="$rPubTopicPre$i"
+                subC $rSubCTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
+                j=`expr $j + 1`
+                if [ $j -ge 3 ]; then
+                       j=0
+                fi
+                :>${sPath}/${subRFName}
+                echo `expr $i - $subCsNum + 1`>>${sPath}/${subRFName}
+        done
+
+}
+
+subCRLoop(){
+   createAccount $rSubIDPre $pubRsNum $pubReNum "$intf-$cIP-subCRLoop"  
+   subCRNoAcc
+}
 #mqtt pub
 pub(){
         pubtopic=$1
@@ -323,6 +348,8 @@ pubRLoopNoAcc(){
 	else
 	     pubR $rPubTopic $rPubMsg $rPubID 
 	fi
+	:>$sPath/$pubRFName
+        echo `expr $i - $pubRsNum + 1`>>$sPath/$pubRFName
      done
 }
 
@@ -364,7 +391,7 @@ subRLoop(){
 }
 
 #pub retain message,then sub them
-subPubRetainNoAcc(){
+subPubRNoAcc(){
   echoFlag=false
   :>${subPubRRecieved}
   j=0
@@ -405,10 +432,10 @@ subPubRetainNoAcc(){
   $sPath/logger.sh monitorlog&
 }
 
-subPubRetain(){
+subPubR(){
   createAccount $rPubIDPre $pubRsNum $pubReNum "$intf-$cIP-subpubR"  
   createAccount $rSubIDPre $pubRsNum $pubReNum "$intf-$cIP-pubsubR"  
-  subPubRetainNoAcc
+  subPubRNoAcc
 }
 
 #stop plenty of mqtt pub retain msg
@@ -425,7 +452,7 @@ stopPubR(){
  done
 }
 
-stopSubRetain(){
+stopSubPubR(){
  stopSubPub
  stopPubR
 }
@@ -452,14 +479,17 @@ case $1 in
    "stoppubr")
      stopPubR
      ;;
-   "stopsubretain")
-     stopSubRetain
+   "stopsubpubr")
+     stopSubPubR
      ;;
-   "subpubretain")
-     subPubRetain
+   "subpubr")
+     subPubR
      ;;
    "subcloop")
      subCLoop
+     ;;
+   "subcrloop")
+     subCRLoop
      ;;
    "subcloopnoacc")
      subCLoopNoAcc

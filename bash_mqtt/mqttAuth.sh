@@ -2,12 +2,12 @@
 #auth:wuhongliang
 #date:2016-12-02
 #add mqtt usr passwd
+sPath=`dirname $0`
+source $sPath/mqtt.conf
 accBegin=$1
 accEnd=$2
 clientIDPre=$3
 accFileName=$4
-sPath=`dirname $0`
-source $sPath/mqtt.conf
 redisSet(){
      redisID=$1
      #中括号中判断变量一定要加引号
