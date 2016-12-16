@@ -18,6 +18,8 @@ subStopCMD=stopsubpub
 subPubCMD=subpub
 subCCMD=subcloop
 subCNoAccCMD=subcloopnoacc
+subCReCMD=subcreloop
+subCReNoAccCMD=subcreloopnoacc
 retainCMD=subpubr
 pubRCMD=pubrloop
 stopRetainCMD=stopsubpubr
@@ -138,7 +140,7 @@ subRemote(){
 #本地下达指令查询远程订阅结果
 queryRemote(){
  reportPath=$1
- filenName=$2
+ fileName=$2
  exprNum=$3
  i=0
  sumPro1=0
@@ -291,10 +293,12 @@ stopSubRemote(){
 	done  
 }
 
+#查询收到的消息
 queryFix(){
         reportPath=$1
         msg=$2
         fileName=$3
+        numbers=$4 
         reportLog $reportPath $msg 
 
         sum=0
@@ -315,7 +319,7 @@ queryFix(){
              sum=`expr $sum + $subMsgRs`
 	done
         
-        message="预期订阅和发布交互数为${subFixCount}查询到当前订阅到的消息总数为$sum"
+        message="预期订阅和发布交互数为${numbers}查询到当前订阅到的消息总数为$sum"
         reportLog $reportPath $message
         echo ${sum}
 }
@@ -355,6 +359,7 @@ pubFixRemote(){
         done
 }
 
+#testcase 4
 subFixAll(){
         subFixLogPath=$sPath/subFixLogs/
         subFixRsLogPath=$sPath/subFixRsLogs/
@@ -374,8 +379,7 @@ subFixAll(){
        while true 
        do
          msg="第${count}次查询订阅消息结果"
-         realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved`
-         echo $realNum
+         realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
@@ -814,7 +818,9 @@ subCQRemote(){
 
 subCQuContinue(){
    msg=$1
-   reportPath=$sPath/subCContinueLogs/
+   reportPath=$2
+   fileName=$3
+   expect=$4
    reportLog $reportPath $msg
    sumPro=0
    sumSes=0
@@ -826,8 +832,8 @@ subCQuContinue(){
      while true
      do
                 sleep $waitForSession
-                num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCFName}|wc -l"`
-                if [ "$num" = "$subCNum" ];then
+                num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
+                if [ "$num" = "$expect" ];then
                         subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
                         break
                 fi
@@ -841,7 +847,7 @@ subCQuContinue(){
      done
      proNum=`echo $subCRsR|awk -F " " '{print $1}'`
      sesNum=`echo $subCRsR|awk -F " " '{print $2}'`
-     reportLog $reportPath $ip $proNum $sesNum $subCNum
+     reportLog $reportPath $ip $proNum $sesNum $expect
      sumPro=`expr $sumPro + $proNum`
      sumSes=`expr $sumSes + $sesNum`
   done
@@ -850,8 +856,8 @@ subCQuContinue(){
       i=0
       while true
       do
-        subCnumber=`cat "${sPath}/${subCFName}"`
-        if [ "$subCnumber" = "$subCNum" ];then
+        subCnumber=`cat "${sPath}/${fileName}"`
+        if [ "$subCnumber" = "$expect" ];then
            subCRs=$(${local_query} $subRsCMD)
            break
         fi
@@ -864,7 +870,7 @@ subCQuContinue(){
      done
      subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
      subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
-     reportLog $reportPath $localPcIP $subCProNum $subCSesNum $subCNum
+     reportLog $reportPath $localPcIP $subCProNum $subCSesNum $expect
      sumPro=`expr $sumPro + $subCProNum`
      sumSes=`expr $sumSes + $subCSesNum`
   fi
@@ -874,7 +880,7 @@ subCQuContinue(){
     len=`expr $len + 1`
   fi
   #多个客户端预期订阅/发布总数
-  expectNum=`expr $len \* $subCNum`
+  expectNum=`expr $len \* $expect`
   if $localPcFlag;then
      if [ "$sumPro" = "$expectNum" ];then
         proTotal="预期订阅总process数为$expectNum,实际数量为$sumPro"
@@ -912,7 +918,7 @@ subCQuContinue(){
 
 unsubCQuContinue(){
    msg=$1
-   reportPath=$sPath/subCContinueLogs/
+   reportPath=$2
    reportLog $reportPath $msg
    sumPro=0
    sumSes=0
@@ -1005,37 +1011,123 @@ unsubCQuContinue(){
 subCcontinue(){
  k=1
  spent=0
+ reportPath=${sPaht}/subCContinueLogs/
 
- #第一调用需创建账户
+ #第一次调用需创建账户
  if $localPcFlag;then
      subCLocal
  fi
 
  subCRemote
  msg="====================订阅后第${k}次查询订阅情况======================="
- subCQuContinue $msg
+ subCQuContinue $msg $reportPath $subCFName $subCNum
  pubC
- sleep $pubCWait 
+ sleep $subCGap 
  msg="====================取消订阅后第${k}次查询订阅情况===================="
- unsubCQuContinue $msg
+ unsubCQuContinue $msg $reportPath
 
  #后续调用不再创建账户
  while [ "$spent" -le "$subCTime" ]
  do
       ((k++))
        if $localPcFlag;then
+         #本地订阅
          subCLoopNoAcc
        fi
+       #远程订阅
        subCNoAccRemote
        msg="====================订阅后第${k}次查询订阅情况======================="
+       #查询
        subCQuContinue $msg
+       #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCNoAcc
-       sleep $pubCWait 
+       subCQuContinue $msg $reportPath $subCFName $subCNum
        msg="====================取消订阅后第${k}次查询订阅情况===================="
-       unsubCQuContinue $msg
-       sleep $subCGap
+       unsubCQuContinue $msg $reportPath
        spent=`expr $k \* $subCGap`
  done
+ stopSubRemote
+ if $localPcFlag;then
+      stopSubPub
+ fi  
+}
+
+#远程一次性订阅
+subCReRemote(){
+   step=1
+   for ip in ${ip_array[*]}
+   do
+     scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     newStart=`expr $subCResNum + $subCReNum \* $step`
+     #修改远程客户机创建客户端的范围
+     ssh -p $sshPort $rootusr@$ip "sed -i 's/subCResNum=${subCResNum}/subCResNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+     #远程客户机进行订阅
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCReCMD}"&
+     ((step++))
+   done
+}
+#添加一次用户后再使用 
+subCReNoAccRemote(){
+   for ip in ${ip_array[*]}
+   do
+     if [ "$ip" = "$localPcIP" ];then continue;fi
+     #远程客户机进行订阅
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCReNoAccCMD}"&
+   done
+}
+
+#testcase 6
+subCRecontinue(){
+ k=1
+ spent=0
+ reportPath=${sPath}/subCReCoLogs/
+ #第一次调用需创建账户
+ if $localPcFlag;then
+     subCReLoop
+ fi
+ echo "1==================="
+ subCReRemote
+ msg="====================订阅后第${k}次查询订阅情况======================="
+ echo "2==================="
+ subCQuContinue $msg $reportPath $subCReFName $subCReNum
+ echo "3==================="
+ pubCRe
+ sleep $subCReGap
+ msg="====================取消订阅后第${k}次查询订阅情况===================="
+ echo "4==================="
+ unsubCQuContinue $msg $reportPath
+
+ #后续调用不再创建账户
+ while [ "$spent" -le "$subCReTime" ]
+ do
+      ((k++))
+       if $localPcFlag;then
+         #本地订阅
+ echo "5==================="
+         subCReLoopNoAcc
+ echo "6==================="
+       fi
+       #远程订阅
+ echo "7==================="
+       subCReNoAccRemote
+       msg="====================订阅后第${k}次查询订阅情况======================="
+       #查询
+ echo "8==================="
+       subCQuContinue $msg $reportPath $subCReFName $subCReNum
+       #发布，发布后会自动断开订阅，此操作相当于取消订阅
+ echo "9==================="
+       pubCReNoAcc
+       sleep $subCGap
+       msg="====================取消订阅后第${k}次查询订阅情况===================="
+ echo "10==================="
+       unsubCQuContinue $msg $reportPath
+       spent=`expr $k \* $subCReGap`
+ done
+ stopSubRemote
+ if $localPcFlag;then
+      stopSubPub
+ fi  
 }
 
 pubRetain(){
@@ -1191,6 +1283,7 @@ querySubCR(){
  reportPubLog $reportPath $msg
 }
 
+#testcase 5
 subCPubR(){
  pubRetain
  queryPubRLocal

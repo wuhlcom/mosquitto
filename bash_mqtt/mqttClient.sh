@@ -80,6 +80,7 @@ subFix(){
  createAccount $subFixIDPre $subFixSNum $subFixENum "$intf-$cIP-subFix"  
  subFixNoAcc 
 }
+
 #mosquitto_sub
 subLoopNoAcc(){
 	if $capFlag;then
@@ -140,6 +141,7 @@ subC(){
       fi
 } 
 
+#一次性订阅同一主题的消息
 subCLoopNoAcc(){
         echoFlag=false
         j=0
@@ -162,7 +164,32 @@ subCLoop(){
    createAccount $subCIDPre $subCsNum $subCeNum "$intf-$cIP-subCLoop"  
    subCLoopNoAcc
 }
- 
+
+#一次性订阅同一主题的消息用于长期测试
+subCReLoopNoAcc(){
+        echoFlag=false
+        j=0
+        :>$sPath/$subCReRecived
+        for i in `seq $subCResNum $subCReeNum`
+        do
+                subID="$subCReIDPre$i"
+                subC $subCReTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/$subCReRecived
+                j=`expr $j + 1`
+                if [ $j -ge 3 ]; then
+                       j=0
+                fi
+                :>${sPath}/${subCReFName}
+                echo `expr $i - $subCResNum + 1`>>${sPath}/${subCReFName}
+        done
+
+}
+
+subCReLoop(){
+   createAccount $subCReIDPre $subCResNum $subCReeNum "$intf-$cIP-subCReLoop"  
+   subCReLoopNoAcc
+}
+
+#订阅不同主题的保留消息 
 subCRNoAcc(){
         echoFlag=false
         j=0
@@ -209,7 +236,7 @@ pub(){
 	fi
 }
 
-#
+#发布单条固定主题消息
 pubCNoAcc(){
      pub $subCTopic $pubCMsg $pubCID $pubQos $defaultUsr $defaultPasswd
 }
@@ -220,6 +247,17 @@ pubC(){
    #pub $subCTopic $pubCMsg $pubCID $pubQos $defaultUsr $defaultPasswd
    createAccount $pubCID 0 0 "$intf-$cIP-pubC"  
    pubCNoAcc
+}
+
+#发布单条固定主题消息
+pubCReNoAcc(){
+     pub $subCReTopic $pubCReMsg $pubCReID $pubQos $defaultUsr $defaultPasswd
+}
+
+#pub msg
+pubCRe(){
+   createAccount $pubCReID 0 0 "$intf-$cIP-pubCRe"  
+   pubCReNoAcc
 }
 
 #大量发布
@@ -273,6 +311,7 @@ stopSubPub(){
 	  do
 	    kill -9 $pid
 	  done
+	  pkill mosquitto_sub
 }
 
 #先订阅后发布，主题保持不变
@@ -488,11 +527,17 @@ case $1 in
    "subcloop")
      subCLoop
      ;;
-   "subcrloop")
-     subCRLoop
-     ;;
    "subcloopnoacc")
      subCLoopNoAcc
+     ;;
+   "subcreloop")
+     subCReLoop
+     ;;
+   "subcreloopnoacc")
+     subCReLoopNoAcc
+     ;;
+   "subcrloop")
+     subCRLoop
      ;;
    "subfix")
      subFix

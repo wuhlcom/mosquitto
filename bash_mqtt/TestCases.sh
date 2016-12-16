@@ -67,16 +67,31 @@ testSubRetain(){
 }
 
 #subAll
+
+#subAllContinue
+
 #subCQLocal
 #subCcontinue
+
+
 #subFixLocal
 #subFixAll
 #subFixRemote
-subCPubR
 
-
+#subCPubR
 #pubRetain
 #queryPubRLocal
 #queryPubRRemote
 #querySubCR
 #subCRetain
+
+subCRecontinue
+#subCReloop
+#subCReRemote
+#msg="====================订阅后第${k}次查询订阅情况======================="
+#subCQuContinue $msg $reportPath $subCReFName $subCReNum
+#pubCRe
+#sleep $subCReGap
+#msg="====================取消订阅后第${k}次查询订阅情况===================="
+#unsubCQuContinue $msg $reportPath
+
