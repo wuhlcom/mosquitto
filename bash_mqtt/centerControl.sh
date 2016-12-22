@@ -1298,12 +1298,20 @@ querySubCR(){
 
 #testcase 5
 subCPubR(){
+ echo "1=============================="
  pubRetain
+ echo "2=============================="
  queryPubRLocal
+ echo "3=============================="
  queryPubRRemote
+ echo "4=============================="
  subCRetain
+ echo "5=============================="
  querySubCR
+ echo "6=============================="
  stopRetainRemote
+ echo "7=============================="
  stopSubPubR
+ echo "8=============================="
 }
  

@@ -22,22 +22,32 @@ sub(){
          usr=$3
          passwd=$4
          subqos=$5
-         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
+         msglog=$6
         if $echoFlag;then
                  echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
+        fi
+        if [ -z "$msglog" ];then
+          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
+        else
+          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd >> $msglog&
         fi
      else 
        if [ -n "$3" ];then
           subqos=$3
-          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
+          msglog=$4
           if $echoFlag;then
 		 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
 	  fi
+          if [ -z "$msglog" ];then
+             mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
+    	  else
+             mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive >> $msglog&
+          fi
        else
-         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
          if $echoFlag;then
            echo client  \'$subid\' sub topic \'$subtopic\'
 	 fi
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
       fi
      fi
 }
@@ -57,22 +67,25 @@ subFixNoAcc(){
    if $capFlag;then
          cap
    fi
-   :>${sPath}/${subFixRecieved}	
+   
+   relog=${sPath}/${subFixRecieved}	
+   nulog=${sPath}/${subFixFName}	
+   : > $relog	
    j=0
    for i in `seq $subFixSNum $subFixENum`
    do
       subID="$subFixIDPre$i"
       if $mqttAuth;then
-        sub $subFixTopic $subID $defaultUsr $defaultPasswd $j>>${sPath}/${subFixRecieved}	
+        sub $subFixTopic $subID $defaultUsr $defaultPasswd $j $relog	
       else
-        sub $subFixTopic $subID $j>>${sPath}/${subFixRecieved}	
+        sub $subFixTopic $subID $j $relog	
       fi
       j=`expr $j + 1`
       if [ $j -ge 3 ]; then
           j=0
       fi
-      :>${sPath}/${subFixFName}	
-      echo `expr $i - $subFixSNum + 1`>>${sPath}/${subFixFName}	
+      : > $nulog	
+      echo `expr $i - $subFixSNum + 1` >> $nulog	
    done
 }
 
@@ -88,6 +101,7 @@ subLoopNoAcc(){
 	fi
           
 	j=0
+	nulog=${sPath}/${subFName}
         #create mqtt usr passwd
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
 	for i in `seq $sSubNum $eSubNum`
@@ -105,8 +119,8 @@ subLoopNoAcc(){
                         fi
  
 			#echo `date +"%Y-%m-%d %H:%M:%S"`>${sPath}/${subFName}
-			:>${sPath}/${subFName}
-	        	echo `expr $i - $sSubNum + 1`>>${sPath}/${subFName}	
+			: > $nulog
+	        	echo `expr $i - $sSubNum + 1` >> $nulog	
 	done
 	#monitor_log subresult&
 	$sPath/logger.sh monitorlog&
@@ -128,16 +142,20 @@ subC(){
       usr=$3
       passwd=$4
       subqos=$5
-
-      if [ -z "$6" ];then
+      relog=$6
+      if [ -z "$7" ];then
         Ccount=$subCcount
       else
-        Ccount=$6
+        Ccount=$7
       fi
 
-      mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
       if $echoFlag;then
             echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
+      fi
+      if [ -z "$relog" ];then
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
+      else
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount >> $relog&
       fi
 } 
 
@@ -145,17 +163,19 @@ subC(){
 subCLoopNoAcc(){
         echoFlag=false
         j=0
-        :>$sPath/$subCRecived
+        relog=$sPath/$subCRecived
+        nulog=${sPath}/${subCFName}
+        : > $relog
         for i in `seq $subCsNum $subCeNum`
         do
                 subID="$subCIDPre$i"
-                subC $subCTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/$subCRecived
+                subC $subCTopic $subID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0
                 fi
-                :>${sPath}/${subCFName}
-                echo `expr $i - $subCsNum + 1`>>${sPath}/${subCFName}
+                : > $nulog
+                echo `expr $i - $subCsNum + 1` >> $nulog
         done
 
 }
@@ -169,17 +189,19 @@ subCLoop(){
 subCReLoopNoAcc(){
         echoFlag=false
         j=0
-        :>$sPath/$subCReRecived
+        relog=$sPath/$subCReRecived
+        nulog=${sPath}/${subCReFName}
+        : > $relog
         for i in `seq $subCResNum $subCReeNum`
         do
                 subID="$subCReIDPre$i"
-                subC $subCReTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/$subCReRecived
+                subC $subCReTopic $subID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0
                 fi
-                :>${sPath}/${subCReFName}
-                echo `expr $i - $subCResNum + 1`>>${sPath}/${subCReFName}
+                :>$nulog
+                echo `expr $i - $subCResNum + 1` >> $nulog
         done
 
 }
@@ -193,18 +215,20 @@ subCReLoop(){
 subCRNoAcc(){
         echoFlag=false
         j=0
-        :>${sPath}/${subCPubRRecieved}
+        relog=${sPath}/${subCPubRRecieved}
+        nulog=${sPath}/${subRFName}
+        : > $relog
         for i in `seq $pubRsNum $pubReNum`
         do
                 subRID="$subRIDPre$i"
                 subCRTopic="$PubRTopicPre$i"
-                subC $subCRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
+                subC $subCRTopic $subRID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0
                 fi
-                :>${sPath}/${subRFName}
-                echo `expr $i - $subCsNum + 1`>>${sPath}/${subRFName}
+                : > $nulog
+                echo `expr $i - $subCsNum + 1` >> $nulog
         done
 
 }
@@ -322,15 +346,16 @@ subPubNoAcc(){
 	fi
  
 	j=0
-	:>$sPath/${subPubRecieved}
+	relog=$sPath/${subPubRecieved}
+	: > $relog
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubSubSNum $pubSubENum $subIDPre ${intf}-${cIP}-pubsub"
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
 			subID="$subIDPre$i"
 			if $mqttAuth;then
-			  sub $subPubTopic $subID $defaultUsr $defaultPasswd $j>>$sPath/${subPubRecieved}
+			  sub $subPubTopic $subID $defaultUsr $defaultPasswd $j $relog
 			else
-			  sub $subPubTopic $sid $j>>$sPath/${subPubRecieved}
+			  sub $subPubTopic $sid $j $relog
 			fi
 			j=`expr $j + 1`
                         if [ $j -ge 3 ]; then
@@ -377,6 +402,7 @@ pubR(){
 #plenty of mqtt pub retain msg
 pubRLoopNoAcc(){
      # ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-pubR"
+      nulog=$sPath/$pubRFName
       for i in `seq $pubRsNum $pubReNum`
       do
     	pubRTopic="$PubRTopicPre${i}"
@@ -387,8 +413,8 @@ pubRLoopNoAcc(){
 	else
 	     pubR $pubRTopic $pubRMsg $pubRID 
 	fi
-	:>$sPath/$pubRFName
-        echo `expr $i - $pubRsNum + 1`>>$sPath/$pubRFName
+	: > $nulog
+        echo `expr $i - $pubRsNum + 1` >> $nulog
      done
 }
 
@@ -404,7 +430,8 @@ subRLoopNoAcc(){
 	 cap
 	fi
 
-        :>${subPubRRecieved}
+        relog=${subPubRRecieved}
+        : > $relog
 	j=0
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-subR"
 	for i in `seq $pubRsNum $pubReNum`
@@ -412,9 +439,9 @@ subRLoopNoAcc(){
            pubRTopic="$PubRTopicPre${i}"
 		   subRID="$subRIDPre$i"
 		if $mqttAuth;then
-  		   sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}
+  		   sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
 		else
-  		   sub $pubRTopic $subRID $j>>${sPath}/${subPubRRecieved}
+  		   sub $pubRTopic $subRID $j $relog
 		fi
 		   j=`expr $j + 1`
 		   if [ $j -ge 3 ]; then
@@ -432,7 +459,8 @@ subRLoop(){
 #pub retain message,then sub them
 subPubRNoAcc(){
   echoFlag=false
-  :>${subPubRRecieved}
+  relog=${subPubRRecieved}
+  : > $relog
   j=0
  
   if $capFlag;then
@@ -459,9 +487,9 @@ subPubRNoAcc(){
             subRID="$subRIDPre$i"
 	    #必须加&
             if $mqttAuth;then 
-	        sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}&
+	        sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
 	    else
-  		sub $pubRTopic $subRID $j>>${sPath}/${subPubRRecieved}&
+  		sub $pubRTopic $subRID $j $relog
 	    fi
 	    j=`expr $j + 1`
 	    if [ $j -ge 3 ]; then
