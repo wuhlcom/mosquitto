@@ -196,9 +196,9 @@ subCRNoAcc(){
         :>${sPath}/${subCPubRRecieved}
         for i in `seq $pubRsNum $pubReNum`
         do
-                subRID="$subRIDPre$i"
-                rSubCTopic="$PubRTopicPre$i"
-                subC $rSubCTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
+                rSubID="$rSubIDPre$i"
+                rSubCTopic="$rPubTopicPre$i"
+                subC $rSubCTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0
@@ -210,7 +210,7 @@ subCRNoAcc(){
 }
 
 subCRLoop(){
-   createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-subCRLoop"  
+   createAccount $rSubIDPre $pubRsNum $pubReNum "$intf-$cIP-subCRLoop"  
    subCRNoAcc
 }
 #mqtt pub
@@ -376,16 +376,16 @@ pubR(){
 
 #plenty of mqtt pub retain msg
 pubRLoopNoAcc(){
-     # ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-pubR"
+     # ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $rPubIDPre ${intf}-${cIP}-pubR"
       for i in `seq $pubRsNum $pubReNum`
       do
-    	pubRTopic="$PubRTopicPre${i}"
-	    pubRMsg="$PubRMsgPre${i}"
-	    pubRID="$pubRIDPre${i}"
+    	rPubTopic="$rPubTopicPre${i}"
+	rPubMsg="$rPubMsgPre${i}"
+	rPubID="$rPubIDPre${i}"
   	if $mqttAuth;then
-	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd 
+	     pubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd 
 	else
-	     pubR $pubRTopic $pubRMsg $pubRID 
+	     pubR $rPubTopic $rPubMsg $rPubID 
 	fi
 	:>$sPath/$pubRFName
         echo `expr $i - $pubRsNum + 1`>>$sPath/$pubRFName
@@ -393,7 +393,7 @@ pubRLoopNoAcc(){
 }
 
 pubRLoop(){
-  createAccount $pubRIDPre $pubRsNum $pubReNum "$intf-$cIP-pubR"  
+  createAccount $rPubIDPre $pubRsNum $pubReNum "$intf-$cIP-pubR"  
   pubRLoopNoAcc
 }  
 
@@ -406,15 +406,15 @@ subRLoopNoAcc(){
 
         :>${subPubRRecieved}
 	j=0
-	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-subR"
+	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $rSubIDPre ${intf}-${cIP}-subR"
 	for i in `seq $pubRsNum $pubReNum`
 	do	
-           pubRTopic="$PubRTopicPre${i}"
-		   subRID="$subRIDPre$i"
+        	   rPubTopic="$rPubTopicPre${i}"
+		   rSubID="$rSubIDPre$i"
 		if $mqttAuth;then
-  		   sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}
+  		   sub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}
 		else
-  		   sub $pubRTopic $subRID $j>>${sPath}/${subPubRRecieved}
+  		   sub $rPubTopic $rSubID $j>>${sPath}/${subPubRRecieved}
 		fi
 		   j=`expr $j + 1`
 		   if [ $j -ge 3 ]; then
@@ -425,7 +425,7 @@ subRLoopNoAcc(){
 }
 
 subRLoop(){
-  createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-subR"  
+  createAccount $rSubIDPre $pubRsNum $pubReNum "$intf-$cIP-subR"  
   subRLoopNoAcc
 }
 
@@ -439,29 +439,29 @@ subPubRNoAcc(){
     cap
   fi
   
-  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
+  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $rPubIDPre ${intf}-${cIP}-subpubR"
   for i in `seq $pubRsNum $pubReNum`
   do
-	    pubRTopic="$PubRTopicPre${i}"
-	    pubRMsg="$PubRMsgPre${i}"
-	    pubRID="$pubRIDPre${i}"
+	    rPubTopic="$rPubTopicPre${i}"
+	    rPubMsg="$rPubMsgPre${i}"
+	    rPubID="$rPubIDPre${i}"
             if $mqttAuth;then 
-	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd
+	     pubR $rPubTopic $rPubMsg $rPubID $defaultUsr $defaultPasswd
             else
-             pubR $pubRTopic $pubRMsg $pubRID 
+             pubR $rPubTopic $rPubMsg $rPubID 
            fi 
   done
   sleep $retainGap 
-  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-pubsubR"
+  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $rSubIDPre ${intf}-${cIP}-pubsubR"
   for i in `seq $pubRsNum $pubReNum`
   do	
-            pubRTopic="$PubRTopicPre${i}"
-            subRID="$subRIDPre$i"
+            rPubTopic="$rPubTopicPre${i}"
+            rSubID="$rSubIDPre$i"
 	    #必须加&
             if $mqttAuth;then 
-	        sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}&
+	        sub $rPubTopic $rSubID $defaultUsr $defaultPasswd $j>>${sPath}/${subPubRRecieved}&
 	    else
-  		sub $pubRTopic $subRID $j>>${sPath}/${subPubRRecieved}&
+  		sub $rPubTopic $rSubID $j>>${sPath}/${subPubRRecieved}&
 	    fi
 	    j=`expr $j + 1`
 	    if [ $j -ge 3 ]; then
@@ -472,8 +472,8 @@ subPubRNoAcc(){
 }
 
 subPubR(){
-  createAccount $pubRIDPre $pubRsNum $pubReNum "$intf-$cIP-subpubR"  
-  createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-pubsubR"  
+  createAccount $rPubIDPre $pubRsNum $pubReNum "$intf-$cIP-subpubR"  
+  createAccount $rSubIDPre $pubRsNum $pubReNum "$intf-$cIP-pubsubR"  
   subPubRNoAcc
 }
 
@@ -481,12 +481,12 @@ subPubR(){
 stopPubR(){
  for i in `seq $pubRsNum $pubReNum`
  do
-     pubRTopic="$PubRTopicPre${i}"
-     pubRID="$pubRIDPre${i}"
+     rPubTopic="$rPubTopicPre${i}"
+     rPubID="$rPubIDPre${i}"
      if $mqttAuth;then
-        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID  -q 2 -r -u $defaultUsr -P $defaultPasswd&
+        mosquitto_pub -t $rPubTopic -n -h $srv_ip -p $srv_port -i $rPubID  -q 2 -r -u $defaultUsr -P $defaultPasswd&
      else
-        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID  -q 2 -r&
+        mosquitto_pub -t $rPubTopic -n -h $srv_ip -p $srv_port -i $rPubID  -q 2 -r&
      fi
  done
 }
