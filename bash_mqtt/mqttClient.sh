@@ -130,12 +130,12 @@ subC(){
       subqos=$5
 
       if [ -z "$6" ];then
-        count=1
+        Ccount=$subCcount
       else
-        count=$6
+        Ccount=$6
       fi
 
-      mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $count&
+      mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
       if $echoFlag;then
             echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
       fi
@@ -197,8 +197,8 @@ subCRNoAcc(){
         for i in `seq $pubRsNum $pubReNum`
         do
                 subRID="$subRIDPre$i"
-                rSubCTopic="$PubRTopicPre$i"
-                subC $rSubCTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
+                subCRTopic="$PubRTopicPre$i"
+                subC $subCRTopic $subRID $defaultUsr $defaultPasswd $j>>${sPath}/${subCPubRRecieved}
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
                        j=0

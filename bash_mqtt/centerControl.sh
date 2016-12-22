@@ -121,9 +121,6 @@ queryLocal(){
   done
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
-  echo $proNum1
-  echo $proNum1
-  echo $exprNum
   reportLog $reportPath $localPcIP $proNum1 $sesNum1 $exprNum
 }
 
@@ -374,6 +371,8 @@ pubFixRemote(){
 }
 
 #testcase 4
+#多台机器同时订阅，订阅后多台机器同时发布消息
+#直到达到预期目标或执行超时才停止
 subFixAll(){
         subFixLogPath=$sPath/subFixLogs/
         subFixRsLogPath=$sPath/subFixRsLogs/
@@ -387,12 +386,11 @@ subFixAll(){
  		queryLocal $subFixLogPath $subFixFName $subFixNum
         fi
         queryRemote $subFixLogPath $subFixFName $subFixNum
-        
-        pubFixLocal
-        pubFixRemote
 
        while true 
        do
+         pubFixLocal
+         pubFixRemote
          msg="=============第${count}次查询订阅消息结果=============="
          realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
@@ -1176,9 +1174,9 @@ reportPubLog(){
         if [ "$pubnum" -lt "$expect" ];then
            pubrRs="Client_$ipaddr:实际上有${pubnum}个mosquitto_pub个,少于预期的${expect}个,相差`expr $expect - $pubnum`个"
         fi
-
+  	write_log $total
+  	write_log $pubrRs
   fi
-  write_log $pubrRs
 }
 
 queryPubRLocal(){
