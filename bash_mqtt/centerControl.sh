@@ -46,34 +46,44 @@ reportLog(){
 	sesNum=$4
         expect=$5
         if [ "-z" $6 ];then
-        client_type=mosquitto_sub 
+            client_type=mosquitto_sub 
 	else
-        client_type=$6 
+            client_type=$6 
+	fi
+        if [ -z "$proNum" ];then 
+		proNum=0
+		nulmsg="prosess num is null"
+		write_log $nulmsg
+	fi
+        
+	if [ -z "$sesNum" ];then 
+		sesNum=0
+		nulmsg="session num is null"
+		write_log $nulmsg
 	fi
 	#不能有空格，有空格会当成多个变量的值
 	total="Client_$ipaddr:预期${client_type}数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
 	proRs=""
 	sesRs=""
-
-	  if [ "$proNum" -lt "$expect" ];then
+	if [ "$proNum" -lt "$expect" ];then
 	    proRs="Client_$ipaddr:实际上有${proNum}个${client_type}进程,少于预期的${expect}个,相差`expr $expect - $proNum`个"
-	  fi
+	fi
    
-	  if [ "$proNum" -gt "$expect" ];then
+	if [ "$proNum" -gt "$expect" ];then
 	    proRs="Client_$ipaddr:实际上有${proNum}个${client_type}进程,多于预期的${expect}个,相差`expr $proNum - $expect`个,有重复的client"
-	  fi
+	fi
 
-	  if [ "$sesNum" -lt "$expect" ];then
+	if [ "$sesNum" -lt "$expect" ];then
 	    sesRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,少于预期的${expect}个,相差`expr $expect - $sesNum`个"
-	  fi
+	fi
 
-	  if [ "$sesNum" -gt "$expect" ];then
-	    proRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,多于预期的${expect}个,相差`expr $sesNum - $exepct`个,有重复的client"
-	  fi
+	if [ "$sesNum" -gt "$expect" ];then
+	   proRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,多于预期的${expect}个,相差`expr $sesNum - $expect`个,有重复的client"
+	fi
 
-	  write_log $total
-	  write_log $proRs 
-	  write_log $sesRs
+	write_log $total
+	write_log $proRs 
+	write_log $sesRs
  fi
 }
 
@@ -111,13 +121,10 @@ queryLocal(){
   done
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
-  echo "b========================="
   echo $proNum1
   echo $proNum1
   echo $exprNum
-  echo "c========================="
   reportLog $reportPath $localPcIP $proNum1 $sesNum1 $exprNum
-  echo "d========================="
 }
 
 #本地订阅并记录结果
@@ -373,15 +380,12 @@ subFixAll(){
 	count=1
         realNum=0
         skipTime=0
-	echo "1========"
         subFixRemote
-	echo "a========"
         if $localPcFlag;then
                 subFixLocal
 		sleep $waitForSession
  		queryLocal $subFixLogPath $subFixFName $subFixNum
         fi
-	echo "2========"
         queryRemote $subFixLogPath $subFixFName $subFixNum
         
         pubFixLocal
@@ -390,9 +394,7 @@ subFixAll(){
        while true 
        do
          msg="=============第${count}次查询订阅消息结果=============="
-	echo "3========"
          realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved $subFixCount`
-	echo "4========"
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
