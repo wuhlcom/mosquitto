@@ -111,13 +111,7 @@ queryLocal(){
   done
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
-  echo "b========================="
-  echo $proNum1
-  echo $proNum1
-  echo $exprNum
-  echo "c========================="
   reportLog $reportPath $localPcIP $proNum1 $sesNum1 $exprNum
-  echo "d========================="
 }
 
 #本地订阅并记录结果
@@ -283,9 +277,8 @@ queryContinue(){
 
 #远程订阅并记录结果
 subQuRemote(){
-  subLogPath=$sPath/subLogs/
   subRemote
-  sleep $waitForSession
+  subLogPath=$sPath/subLogs/
   queryRemote $subLogPath $subFName $subNum
 }
 
@@ -370,18 +363,14 @@ pubFixRemote(){
 subFixAll(){
         subFixLogPath=$sPath/subFixLogs/
         subFixRsLogPath=$sPath/subFixRsLogs/
-	count=1
+	    count=1
         realNum=0
         skipTime=0
-	echo "1========"
         subFixRemote
-	echo "a========"
         if $localPcFlag;then
                 subFixLocal
-		sleep $waitForSession
  		queryLocal $subFixLogPath $subFixFName $subFixNum
         fi
-	echo "2========"
         queryRemote $subFixLogPath $subFixFName $subFixNum
         
         pubFixLocal
@@ -389,10 +378,8 @@ subFixAll(){
 
        while true 
        do
-         msg="=============第${count}次查询订阅消息结果=============="
-	echo "3========"
+         msg="第${count}次查询订阅消息结果"
          realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved $subFixCount`
-	echo "4========"
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
@@ -418,7 +405,7 @@ subAll(){
         sesNum1=0
         sumPro1=0
         sumSes1=0
-	subQuRemote
+	    subQuRemote
         if $localPcFlag;then
                 subQuLocal
                 expectNum=`expr $expectNum + $subNum`
@@ -1024,15 +1011,14 @@ unsubCQuContinue(){
 subCcontinue(){
  k=1
  spent=0
- reportPath=${sPath}/subCContinueLogs/
+ reportPath=${sPaht}/subCContinueLogs/
 
  #第一次调用需创建账户
  if $localPcFlag;then
      subCLocal
  fi
- subCRemote
- sleep $waitForSession
 
+ subCRemote
  msg="====================订阅后第${k}次查询订阅情况======================="
  subCQuContinue $msg $reportPath $subCFName $subCNum
  pubC
@@ -1052,9 +1038,10 @@ subCcontinue(){
        subCNoAccRemote
        msg="====================订阅后第${k}次查询订阅情况======================="
        #查询
-       subCQuContinue $msg $reportPath $subCFName $subCNum
+       subCQuContinue $msg
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCNoAcc
+       subCQuContinue $msg $reportPath $subCFName $subCNum
        msg="====================取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $reportPath
        spent=`expr $k \* $subCGap`

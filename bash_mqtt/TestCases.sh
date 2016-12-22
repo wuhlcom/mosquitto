@@ -24,12 +24,15 @@ case $1 in
    "subcre")
      subCRecontinue
      ;;
+   "all")
+     subAll
+     subAllContinue    
+     subCcontinue
+     subFixAll
+     subCPubR
+     subCRecontinue
+   ;;
    *)
-    subAll
-    subAllContinue    
-    subCcontinue
-    subFixAll
-    subCPubR
-    subCRecontinue
+    echo "Param error!Please check!"
     ;;
 esac

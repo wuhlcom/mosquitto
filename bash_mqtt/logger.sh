@@ -43,9 +43,6 @@ mqttinfo(){
   process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
   process_num=`expr $process_num - 1`
-  #echo `date +"%Y-%m-%d %H:%M:%S"`>"$sPath"/subResult
-  #echo $process_num>>"$sPath"/subResult
-  #echo $session_num>>"$sPath"/subResult
   mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
  }

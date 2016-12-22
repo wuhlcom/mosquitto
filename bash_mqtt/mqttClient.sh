@@ -24,7 +24,7 @@ sub(){
          subqos=$5
          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
         if $echoFlag;then
-                 echo client  \'$subid\' sub topic \'$subtopic\' usrname $usr passwd $passwd qos $subqos 
+                 echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
         fi
      else 
        if [ -n "$3" ];then
@@ -137,7 +137,7 @@ subC(){
 
       mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $count&
       if $echoFlag;then
-            echo client  \'$subid\' sub topic \'$subtopic\' usrname $usr passwd $passwd qos $subqos
+            echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
       fi
 } 
 
