@@ -1143,6 +1143,7 @@ subCRecontinue(){
  fi  
 }
 
+#本机与远程机器均发布多条保留消息，且主题和消息内容都是唯一的
 pubRetain(){
  step=1
  if $localPcFlag;then
@@ -1225,25 +1226,24 @@ queryPubRRemote(){
  done 
 }
 
+#远程和本地一次性订阅保留消息
 subCRetain(){
- #step=1
  if $localPcFlag;then
     subCRLoop
  fi
  
  for ip in ${ip_array[*]}
  do
-     # scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
      if [ "$ip" = "$localPcIP" ];then continue;fi
-     #newStart=`expr $pubRsNum + $pubRNum \* $step`
-     #ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${newStart}/g' ${remote_dir}/mqtt.conf"
      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCRCMD}"
-     #((step++))
  done
 }
 
+#远程和本地一次性订阅保留消息后
+#收到的保留消息数量
 querySubCR(){
- reportPath=$sPath/subCPubRLogs/  
+ reportPath=$sPath/subCPubRLogs/ 
+ reMsg=${sPath}/${subCPubRRecieved} 
  sum=0
  expectNum=0
  if $localPcFlag;then
@@ -1251,13 +1251,13 @@ querySubCR(){
     while true
     do
       sleep $waitForSession
-      subpubrNum=`cat ${sPath}/${subCPubRRecieved}|wc -l`  
+      subpubrNum=`cat $reMsg|wc -l`  
       if [ "$subpubrNum" = "$pubRNum" ];then
          break
       fi
       
       if [ "$i" = "$querySubCount" ];then
-        subpubrNum=`cat $sPath/$subCPubRRecieved`  
+        subpubrNum=`cat $reMsg|wc -l`  
         break
       fi
      ((i++))
@@ -1280,7 +1280,7 @@ querySubCR(){
       fi
       
       if [ "$i" = "$querySubCount" ];then
-	 subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}"`
+	 subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}|wc -l"`
         break
       fi
       ((i++))
@@ -1298,20 +1298,18 @@ querySubCR(){
 
 #testcase 5
 subCPubR(){
- echo "1=============================="
+ #发布保留消息
  pubRetain
- echo "2=============================="
+ sleep $pubRWait
+ #查询发布情况
  queryPubRLocal
- echo "3=============================="
  queryPubRRemote
- echo "4=============================="
+ #订阅保留消息
  subCRetain
- echo "5=============================="
+ sleep $waitForSession
+ #查询收到保留消息数量
  querySubCR
- echo "6=============================="
  stopRetainRemote
- echo "7=============================="
  stopSubPubR
- echo "8=============================="
 }
  

@@ -90,7 +90,7 @@ subFixNoAcc(){
 }
 
 subFix(){
- createAccount $subFixIDPre $subFixSNum $subFixENum "$intf-$cIP-subFix"  
+ createAccount $subFixIDPre $subFixSNum $subFixENum "${intf}-${cIP}-subFix"  
  subFixNoAcc 
 }
 
@@ -106,8 +106,8 @@ subLoopNoAcc(){
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
 	for i in `seq $sSubNum $eSubNum`
 	do	
-			subTopic="$subTopicPre$i"
-			subID="$subIDPre$i"
+			subTopic="${subTopicPre}${i}"
+			subID="${subIDPre}${i}"
                         if $mqttAuth;then
 		   		sub $subTopic $subID $defaultUsr $defaultPasswd $j
   		        else
@@ -127,7 +127,7 @@ subLoopNoAcc(){
 }
 
 subLoop(){
- createAccount $subIDPre $sSubNum $eSubNum "$intf-$cIP-sub"  
+ createAccount $subIDPre $sSubNum $eSubNum "${intf}-${cIP}-sub"  
  subLoopNoAcc
 }
 
@@ -181,7 +181,7 @@ subCLoopNoAcc(){
 }
 
 subCLoop(){
-   createAccount $subCIDPre $subCsNum $subCeNum "$intf-$cIP-subCLoop"  
+   createAccount $subCIDPre $subCsNum $subCeNum "${intf}-${cIP}-subCLoop"  
    subCLoopNoAcc
 }
 
@@ -207,7 +207,7 @@ subCReLoopNoAcc(){
 }
 
 subCReLoop(){
-   createAccount $subCReIDPre $subCResNum $subCReeNum "$intf-$cIP-subCReLoop"  
+   createAccount $subCReIDPre $subCResNum $subCReeNum "${intf}-${cIP}-subCReLoop"  
    subCReLoopNoAcc
 }
 
@@ -221,7 +221,7 @@ subCRNoAcc(){
         for i in `seq $pubRsNum $pubReNum`
         do
                 subRID="$subRIDPre$i"
-                subCRTopic="$PubRTopicPre$i"
+                subCRTopic="$pubRTopicPre$i"
                 subC $subCRTopic $subRID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
@@ -232,9 +232,9 @@ subCRNoAcc(){
         done
 
 }
-
+#订阅的主题，起始和结束序列与pubRLoop()保持一致
 subCRLoop(){
-   createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-subCRLoop"  
+   createAccount $subRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-subCRLoop"  
    subCRNoAcc
 }
 #mqtt pub
@@ -269,7 +269,7 @@ pubCNoAcc(){
 pubC(){
    #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh 0 0 $pubCID ${intf}-${cIP}-pubC"
    #pub $subCTopic $pubCMsg $pubCID $pubQos $defaultUsr $defaultPasswd
-   createAccount $pubCID 0 0 "$intf-$cIP-pubC"  
+   createAccount $pubCID 0 0 "${intf}-${cIP}-pubC"  
    pubCNoAcc
 }
 
@@ -280,7 +280,7 @@ pubCReNoAcc(){
 
 #pub msg
 pubCRe(){
-   createAccount $pubCReID 0 0 "$intf-$cIP-pubCRe"  
+   createAccount $pubCReID 0 0 "${intf}-${cIP}-pubCRe"  
    pubCReNoAcc
 }
 
@@ -302,7 +302,7 @@ pubLoopNoAcc(){
 }
 
 pubLoop(){
-  createAccount $pubIDPre $sPubNum $ePubNum "$intf-$cIP-pub"  
+  createAccount $pubIDPre $sPubNum $ePubNum "${intf}-${cIP}-pub"  
   pubLoopNoAcc
 }
 
@@ -320,7 +320,7 @@ pubFixNoAcc(){
 }
 
 pubFix(){
-  createAccount $pubIDPre $pubFixSNum $pubFixENum "$intf-$cIP-pubFix"  
+  createAccount $pubIDPre $pubFixSNum $pubFixENum "${intf}-${cIP}-pubFix"  
   pubFixNoAcc
 }
 #stop sub or pub process
@@ -380,8 +380,8 @@ subPubNoAcc(){
 }
 
 subPub(){
-  createAccount $subIDPre $pubSubSNum $pubSubENum "$intf-$cIP-pubsub"  
-  createAccount $pubIDPre $subPubSNum $subPubENum "$intf-$cIP-subpub"  
+  createAccount $subIDPre $pubSubSNum $pubSubENum "${intf}-${cIP}-pubsub"  
+  createAccount $pubIDPre $subPubSNum $subPubENum "${intf}-${cIP}-subpub"  
   subPubNoAcc
 }
 
@@ -405,9 +405,9 @@ pubRLoopNoAcc(){
       nulog=$sPath/$pubRFName
       for i in `seq $pubRsNum $pubReNum`
       do
-    	pubRTopic="$PubRTopicPre${i}"
-	    pubRMsg="$PubRMsgPre${i}"
-	    pubRID="$pubRIDPre${i}"
+    	pubRTopic="${pubRTopicPre}${i}"
+	pubRMsg="${pubRMsgPre}${i}"
+	pubRID="${pubRIDPre}${i}"
   	if $mqttAuth;then
 	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd 
 	else
@@ -419,7 +419,7 @@ pubRLoopNoAcc(){
 }
 
 pubRLoop(){
-  createAccount $pubRIDPre $pubRsNum $pubReNum "$intf-$cIP-pubR"  
+  createAccount $pubRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-pubR"  
   pubRLoopNoAcc
 }  
 
@@ -436,7 +436,7 @@ subRLoopNoAcc(){
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-subR"
 	for i in `seq $pubRsNum $pubReNum`
 	do	
-           pubRTopic="$PubRTopicPre${i}"
+           pubRTopic="$pubRTopicPre${i}"
 		   subRID="$subRIDPre$i"
 		if $mqttAuth;then
   		   sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
@@ -452,7 +452,7 @@ subRLoopNoAcc(){
 }
 
 subRLoop(){
-  createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-subR"  
+  createAccount $subRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-subR"  
   subRLoopNoAcc
 }
 
@@ -470,9 +470,9 @@ subPubRNoAcc(){
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
   for i in `seq $pubRsNum $pubReNum`
   do
-	    pubRTopic="$PubRTopicPre${i}"
-	    pubRMsg="$PubRMsgPre${i}"
-	    pubRID="$pubRIDPre${i}"
+	    pubRTopic="${pubRTopicPre}${i}"
+	    pubRMsg="${pubRMsgPre}${i}"
+	    pubRID="${pubRIDPre}${i}"
             if $mqttAuth;then 
 	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd
             else
@@ -483,9 +483,8 @@ subPubRNoAcc(){
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-pubsubR"
   for i in `seq $pubRsNum $pubReNum`
   do	
-            pubRTopic="$PubRTopicPre${i}"
-            subRID="$subRIDPre$i"
-	    #必须加&
+            pubRTopic="${pubRTopicPre}${i}"
+            subRID="${subRIDPre}${i}"
             if $mqttAuth;then 
 	        sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
 	    else
@@ -500,8 +499,8 @@ subPubRNoAcc(){
 }
 
 subPubR(){
-  createAccount $pubRIDPre $pubRsNum $pubReNum "$intf-$cIP-subpubR"  
-  createAccount $subRIDPre $pubRsNum $pubReNum "$intf-$cIP-pubsubR"  
+  createAccount $pubRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-subpubR"  
+  createAccount $subRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-pubsubR"  
   subPubRNoAcc
 }
 
@@ -509,8 +508,8 @@ subPubR(){
 stopPubR(){
  for i in `seq $pubRsNum $pubReNum`
  do
-     pubRTopic="$PubRTopicPre${i}"
-     pubRID="$pubRIDPre${i}"
+     pubRTopic="${pubRTopicPre}${i}"
+     pubRID="${pubRIDPre}${i}"
      if $mqttAuth;then
         mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID  -q 2 -r -u $defaultUsr -P $defaultPasswd&
      else
