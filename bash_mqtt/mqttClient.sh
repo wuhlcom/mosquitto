@@ -189,7 +189,7 @@ subCLoop(){
 subCReLoopNoAcc(){
         echoFlag=false
         j=0
-        relog=$sPath/$subCReRecived
+        relog=$sPath/$subCReRecieved
         nulog=${sPath}/${subCReFName}
         : > $relog
         for i in `seq $subCResNum $subCReeNum`
