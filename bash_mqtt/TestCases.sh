@@ -26,10 +26,15 @@ case $1 in
      ;;
    "all")
      subAll
+     sleep $tcGap
      subAllContinue    
+     sleep $tcGap
      subCcontinue
+     sleep $tcGap
      subFixAll
+     sleep $tcGap
      subCPubR
+     sleep $tcGap
      subCRecontinue
    ;;
    *)

@@ -163,7 +163,7 @@ subC(){
 subCLoopNoAcc(){
         echoFlag=false
         j=0
-        relog=$sPath/$subCRecived
+        relog=$sPath/$subCReieved
         nulog=${sPath}/${subCFName}
         : > $relog
         for i in `seq $subCsNum $subCeNum`
@@ -249,11 +249,11 @@ pub(){
         	 pubqos=$4
         	 usr=$5
 	         passwd=$6
-		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
+		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd
         else
 		if [ -n "$4" ];then
         		pubqos=$4
-			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos&
+			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos
 		else
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid&
 		fi
@@ -403,9 +403,9 @@ pubR(){
 	if $mqttAuth;then
 		usrname=$4
 		passwd=$5
-		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r -u $usrname -P $passwd&
+		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r -u $usrname -P $passwd
 	else
-		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r&
+		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r
 	fi
 }
 

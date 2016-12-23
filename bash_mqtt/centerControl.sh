@@ -126,8 +126,8 @@ queryLocal(){
 
 #本地订阅并记录结果
 subQuLocal(){
+ subLogPath=$sPath/subSessionLogs/
  subLocal
- subLogPath=$sPath/subLogs/
  queryLocal $subLogPath $subFName $subNum
 }
 
@@ -206,9 +206,9 @@ queryRemote(){
 
 #本地下达指令查询远程订阅结果
 queryContinue(){
+ reportPath=$sPath/subContinueSessionLogs/
  k=1
  spentTime=0
- reportPath=$sPath/subCoutinueLogs/
  while [ "$spentTime" -le "$queryTime" ] 
  do
     sumPro2=0
@@ -287,7 +287,8 @@ queryContinue(){
 
 #远程订阅并记录结果
 subQuRemote(){
-  subLogPath=$sPath/subLogs/
+  #与subQuLocal路径保持一致
+  subLogPath=$sPath/subSessionLogs/
   subRemote
   sleep $waitForSession
   queryRemote $subLogPath $subFName $subNum
@@ -305,7 +306,7 @@ stopSubRemote(){
 }
 
 #查询收到的消息
-queryFix(){
+queryFixMsgNum(){
         reportPath=$1
         msg=$2
         fileName=$3
@@ -316,7 +317,7 @@ queryFix(){
         subMsgRs=0
         
         if $localPcFlag;then 
-          subMsgRs=`cat $sPath/$fileName|wc -l`
+          subMsgRs=`cat ${sPath}/${fileName}|wc -l`
           message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
           reportLog $reportPath $message
           sum=`expr $sum + $subMsgRs`
@@ -371,11 +372,11 @@ pubFixRemote(){
 }
 
 #testcase 4
-#多台机器同时订阅，订阅后多台机器同时发布消息
-#直到达到预期目标或执行超时才停止
+#多台机器同时长期订阅，订阅后多台机器同时不停发布消息
+#直到收到消息数达到预期目标或执行超时才停止
 subFixAll(){
-        subFixLogPath=$sPath/subFixLogs/
-        subFixRsLogPath=$sPath/subFixRsLogs/
+        subFixLogPath=$sPath/subFixSessionLogs/
+        subFixRsLogPath=$sPath/subFixMsgLogs/
 	count=1
         realNum=0
         skipTime=0
@@ -392,7 +393,7 @@ subFixAll(){
          pubFixLocal
          pubFixRemote
          msg="=============第${count}次查询订阅消息结果=============="
-         realNum=`queryFix $subFixRsLogPath $msg $subFixRecieved $subFixCount`
+         realNum=`queryFixMsgNum $subFixRsLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
@@ -413,6 +414,7 @@ subFixAll(){
 }
 
 #testcase 1
+#长期订阅，订阅指定数量，测试服务端最大支持订阅数
 subAll(){
         proNum1=0
         sesNum1=0
@@ -448,6 +450,8 @@ subAll(){
 }
 
 #testcase 2
+#长期订阅，订阅后不停的查询线程和会话
+#在规定的时间内线程和会话数与预期的一直一致
 subAllContinue(){
         proNum2=0
         sesNum2=0
@@ -471,7 +475,8 @@ subPubLocal(){
 
 #local pc sub pub query
 subPubQuLocal(){
-    reportPath=$sPath/subPubLogs/
+    subPubPath=$sPath/subPubSessionLogs/
+    subPubMsgPath=$sPath/subPubMsgLogs/
     session_num=0
     query_num=1
     subRecieved=""
@@ -494,12 +499,12 @@ subPubQuLocal(){
    done
    proNum=`echo $subRs|awk -F " " '{print $1}'`
    sesNum=`echo $subRs|awk -F " " '{print $2}'`
-   reportLog $reportPath $localPcIP $proNum $sesNum $sub_pub_num
-   reportLog $reportPath $subRecived
+   reportLog $subPubPath $localPcIP $proNum $sesNum $sub_pub_num
+   reportLog $subPubMsgPath $subRecived
    if [ "$sub_pub_num" -ne "$session_num" ];then
       value=`expr $sub_pub_num - $session_num`
       subRecived="执行PC${localPcIP}预期订阅/发布总数为$sub_pub_num,实际数量为$session_num,相差${value}"
-      reportLog $reportPath $subRecived
+      reportLog $subPubMsgPath $subRecived
    fi
 }
 
@@ -534,8 +539,9 @@ subPubRemote(){
 
 #query remote pc sub pub
 subPubQuRemote(){
+        subPubPath=$sPath/subPubSessionLogs/
+        subPubMsgPath=$sPath/subPubMsgLogs/
 	sum=0
-        reportPath=$sPath/subPubLogs/
 	for ip in ${ip_array[*]}  
 	do
 	    num=0
@@ -562,13 +568,13 @@ subPubQuRemote(){
 	    done
 	    proNum=`echo $subRsRemote|awk -F " " '{print $1}'`
 	    sesNum=`echo $subRsRemote|awk -F " " '{print $2}'`
-	    reportLog $reportPath $ip $proNum $sesNum $sub_pub_num
-	    reportLog $reportPath $subRecivedR
+	    reportLog $subPubPath $ip $proNum $sesNum $sub_pub_num
+	    reportLog $subPubMsgPath $subRecivedR
 
 	    if [ "$sub_pub_num" -ne "$num" ];then
             	diffvalue=`expr $sub_pub_num - $num`
 	    	subRecivedR="远程PC${ip}预期订阅/发布数为$sub_pub_num,实际数量为$num,相差${diffvalue}"
-	        reportLog $reportPath $subRecivedR
+	        reportLog $subPubMsgPath $subRecivedR
 	    fi
 
 	    #统计所有pc的会话数
@@ -585,7 +591,7 @@ subPubQuRemote(){
                value=`expr $expectNum - $sum`
 	       recievedTotal="远程预期订阅/发布总数为$expectNum,实际数量为$sum,相差${value}"        
 	fi
-        reportLog $reportPath $recievedTotal
+	reportLog $subPubMsgPath $subRecivedR
 }
 
 subpubQuRemote(){
@@ -600,7 +606,7 @@ retainLocal(){
 
 #local pub retain,then sub them
 retainQuLocal(){
-        reportPath=$sPath/pubRetainLogs/
+        reportPath=$sPath/pubRMsgLogs/
 	num=0
         queryNum=1
         retainRs=""
@@ -652,8 +658,9 @@ retainRemote(){
 
 #remote pub retain,then sub them
 retainQuRemote(){
+        #retainQuLocal保持一致
+        reportPath=$sPath/pubRMsgLogs/
 	sum=0
-        reportPath=$sPath/pubRetainLogs/
 	for ip in ${ip_array[*]}  
 	do
 	    num=0
@@ -720,7 +727,7 @@ subCLocal(){
 
 #查询本地一次性订阅
 subCQuLocal(){
-  reportPath=$sPath/subCLogs/
+  reportPath=$sPath/subCSessionLogs/
   subCProNum=0 
   subCSesNum=0
   i=0
@@ -774,7 +781,8 @@ subCNoAccRemote(){
   
 #远程一性订阅查询
 subCQuRemote(){
-   reportPath=$sPath/subCLogs/
+   #与subCQuLocal保持一致
+   reportPath=$sPath/subCSessionLogs/
    sumPro=0
    sumSes=0
    for ip in ${ip_array[*]}
@@ -1022,10 +1030,13 @@ unsubCQuContinue(){
 }
 
 #testcase 3
+#单次订阅，发布，断开
+#反复操作5分钟
+#每一轮要求订阅数(进程和会话数)，发布后收到消息数，断开数要与预期一致
 subCcontinue(){
  k=1
  spent=0
- reportPath=${sPath}/subCContinueLogs/
+ reportPath=${sPath}/subCContinueSessionLogs/
 
  #第一次调用需创建账户
  if $localPcFlag;then
@@ -1091,26 +1102,74 @@ subCReNoAccRemote(){
    done
 }
 
+#查询收到的消息数量
+queryMsgNum(){
+        reportPath=$1
+        msg=$2
+        fileName=$3
+        msgNum=$4 
+	num=0
+        sum=0
+        expectNum=0
+        subMsgRs=""
+        reportLog $reportPath $msg 
+           
+        if $localPcFlag;then 
+          subMsgRs=`cat ${sPath}/${fileName}|wc -l`
+          message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
+          reportLog $reportPath $message
+          sum=`expr $sum + $subMsgRs`
+	  num=1
+        fi
+ 
+        for ip in ${ip_array[*]}
+        do
+	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
+             message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
+             reportLog $reportPath $message 
+             sum=`expr $sum + $subMsgRs`
+            num=`expr $num + 1`
+        done
+        expectNum=`expr $num \* msgNum`
+        message="预期订阅和发布交互数为${expectNum}查询到当前订阅到的消息总数为$sum"
+        reportLog $reportPath $message
+        echo ${sum}
+}
+
 #testcase 6
+#创建账户，一次性订阅发布断开
+#测试点主要观察每一次循环订阅-发布-断开时
+#订阅数，发布后收到消息数，断开数是要与预期的一致
+#订阅-发布-断开
+#统计每一轮会话数
+#统计每一轮收到消息数
+#统计收到总的消息数
 subCRecontinue(){
- k=1
- spent=0
- reportPath=${sPath}/subCReCoLogs/
- #第一次调用需创建账户
- if $localPcFlag;then
+  subCReSessionPath=${sPath}/subCReSessionLogs/
+  subCReMsgPath=${sPath}/subCReMsgLogs/
+  subCReMsgAllPath=${sPath}/subCReMsgAllLogs/
+  k=1
+  spent=0
+  msgNum=0
+  totalMsgNum=0
+  #第一次调用需创建账户
+  if $localPcFlag;then
      subCReLoop
- fi
- echo "1==================="
- subCReRemote
- msg="====================订阅后第${k}次查询订阅情况======================="
- echo "2==================="
- subCQuContinue $msg $reportPath $subCReFName $subCReNum
- echo "3==================="
- pubCRe
- sleep $subCReGap
- msg="====================取消订阅后第${k}次查询订阅情况===================="
- echo "4==================="
- unsubCQuContinue $msg $reportPath
+  fi
+  subCReRemote
+  sleep $waitForSession
+  msg="====================订阅后第${k}次查询订阅情况======================="
+  subCQuContinue $msg $subCReSessionPath $subCReFName $subCReNum
+
+  pubCRe 
+  sleep $subCReGap
+  msg="=============取消订阅后第${k}次查询订阅情况===================="
+  unsubCQuContinue $msg $subCReSessionPath
+  echo "r1======================"
+  echo $subCReRecieved
+  totalMsgNum=`queryMsgNum $subCReMsgPath $msg $subCReRecieved $subCReNum`
+  msg="======第${k}次统计收到消息总数为${totalMsgNum}======"
+  reportLog $subCReMsgAllPath $msg
 
  #后续调用不再创建账户
  while [ "$spent" -le "$subCReTime" ]
@@ -1118,24 +1177,23 @@ subCRecontinue(){
       ((k++))
        if $localPcFlag;then
          #本地订阅
- echo "5==================="
          subCReLoopNoAcc
- echo "6==================="
        fi
        #远程订阅
- echo "7==================="
        subCReNoAccRemote
        msg="====================订阅后第${k}次查询订阅情况======================="
        #查询
- echo "8==================="
-       subCQuContinue $msg $reportPath $subCReFName $subCReNum
+       subCQuContinue $msg $subCReSessionPath $subCReFName $subCReNum
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
- echo "9==================="
        pubCReNoAcc
        sleep $subCGap
+
+       totalMsgNum=`queryMsgNum $subCReMsgPath $msg $subCReRecieved $subCReNum`
+       msg="======第${k}次统计收到消息总数为${totalMsgNum}======"
+       reportLog $subCReMsgAllPath $msg
+
        msg="====================取消订阅后第${k}次查询订阅情况===================="
- echo "10==================="
-       unsubCQuContinue $msg $reportPath
+       unsubCQuContinue $msg $subCReSessionPath
        spent=`expr $k \* $subCReGap`
  done
  stopSubRemote
@@ -1183,7 +1241,7 @@ reportPubLog(){
 }
 
 queryPubRLocal(){
- reportPath=${sPath}/pubRNumberLogs/
+ reportPath=${sPath}/pubRCountLogs/
  i=0
  pubrNum=0
  if $localPcFlag;then
@@ -1206,7 +1264,7 @@ queryPubRLocal(){
 }
  
 queryPubRRemote(){
- reportPath=$sPath/pubRNumberLogs/
+ reportPath=$sPath/pubRCountLogs/
  for ip in ${ip_array[*]}
  do
     i=0
@@ -1246,7 +1304,7 @@ subCRetain(){
 #远程和本地一次性订阅保留消息后
 #收到的保留消息数量
 querySubCR(){
- reportPath=$sPath/subCPubRLogs/ 
+ reportPath=$sPath/subCPubRMsgLogs/ 
  reMsg=${sPath}/${subCPubRRecieved} 
  sum=0
  expectNum=0
@@ -1269,7 +1327,7 @@ querySubCR(){
     msg="本地PC${localPcIP}预期收到保留消息${pubRNum},实际收到${subpubrNum}"
     reportPubLog $reportPath $msg
     sum=`expr $sum + $subpubrNum`
-    expectNum=`expr $expectNum + $subpubrNum`
+    expectNum=`expr $expectNum + $pubRNum`
  fi
 
  for ip in ${ip_array[*]}
@@ -1301,6 +1359,11 @@ querySubCR(){
 }
 
 #testcase 5
+#多台机器发布大量的保留消息
+#每条消息都是唯一
+#多台机器分别自己这台机器发布的保留消息
+#使用一次性订阅，不停的订阅保留消息直到所有保留消息都订阅完成
+#统计收到的保留消息总数以判断是否正常
 subCPubR(){
  #发布保留消息
  pubRetain
@@ -1313,8 +1376,9 @@ subCPubR(){
  #查询收到保留消息数量
  querySubCR
  sleep $waitForSession
+ #停止远程订阅和删除保留消息
  stopRetainRemote
- sleep $waitForSession
+ #停止本地订阅和删除保留消息
  stopSubPubR
 }
  
