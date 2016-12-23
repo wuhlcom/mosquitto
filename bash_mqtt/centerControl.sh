@@ -1115,11 +1115,11 @@ queryMsgNum(){
         reportLog $reportPath $msg 
            
         if $localPcFlag;then 
-          subMsgRs=`cat ${sPath}/${fileName}|wc -l`
-          message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
-          reportLog $reportPath $message
-          sum=`expr $sum + $subMsgRs`
-	  num=1
+            subMsgRs=`cat ${sPath}/${fileName}|wc -l`
+            message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
+            reportLog $reportPath $message
+            sum=`expr $sum + $subMsgRs`
+	    num=1
         fi
  
         for ip in ${ip_array[*]}
@@ -1128,9 +1128,9 @@ queryMsgNum(){
              message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
              reportLog $reportPath $message 
              sum=`expr $sum + $subMsgRs`
-            num=`expr $num + 1`
+             num=`expr $num + 1`
         done
-        expectNum=`expr $num \* msgNum`
+        expectNum=`expr $num \* $msgNum`
         message="预期订阅和发布交互数为${expectNum}查询到当前订阅到的消息总数为$sum"
         reportLog $reportPath $message
         echo ${sum}
