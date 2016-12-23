@@ -228,7 +228,7 @@ subCRNoAcc(){
                        j=0
                 fi
                 : > $nulog
-                echo `expr $i - $subCsNum + 1` >> $nulog
+                echo `expr $i - $pubRsNum + 1` >> $nulog
         done
 
 }
@@ -323,10 +323,15 @@ pubFix(){
   createAccount $pubIDPre $pubFixSNum $pubFixENum "${intf}-${cIP}-pubFix"  
   pubFixNoAcc
 }
-#stop sub or pub process
-stopSubPub(){
-	  pkill mosquitto_sub
-	  pids=`ps -ef |grep mqttClient.sh|grep "\/bin\/bash"|awk -F " " '{print $2}'`
+
+#stopScipt
+stopScript(){
+          if [ -z "$1" ];then
+	       scriptName=`basename $0`
+	  else
+               scriptName=$1
+          fi
+	  pids=`ps -ef |grep ${scriptName}|grep "\/bin\/bash"|awk -F " " '{print $2}'`
 	  OLD_IFS="$IFS"
 	  IFS=" "
 	  arr=($pids)
@@ -335,6 +340,11 @@ stopSubPub(){
 	  do
 	    kill -9 $pid
 	  done
+}
+
+#stop sub
+stopSub(){
+	  pkill mosquitto_sub
 	  pkill mosquitto_sub
 }
 
@@ -511,15 +521,15 @@ stopPubR(){
      pubRTopic="${pubRTopicPre}${i}"
      pubRID="${pubRIDPre}${i}"
      if $mqttAuth;then
-        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID  -q 2 -r -u $defaultUsr -P $defaultPasswd&
+        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID -r -u $defaultUsr -P $defaultPasswd&
      else
-        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID  -q 2 -r&
+        mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID -r&
      fi
  done
 }
 
 stopSubPubR(){
- stopSubPub
+ stopSub
  stopPubR
 }
 
@@ -530,8 +540,8 @@ case $1 in
    "publoop")
      pubLoop
      ;;
-   "stopsubpub")
-     stopSubPub
+   "stopsub")
+     stopSub
      ;;
    "subpub")
      subPub

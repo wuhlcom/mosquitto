@@ -14,7 +14,7 @@ subCRCMD=subcrloop
 subFixCMD=subfix  
 pubFixCMD=pubfix
 subRsCMD=subresult
-subStopCMD=stopsubpub
+subStopCMD=stopsub
 subPubCMD=subpub
 subCCMD=subcloop
 subCNoAccCMD=subcloopnoacc
@@ -408,7 +408,7 @@ subFixAll(){
 
       stopSubRemote
       if $localPcFlag;then
-          stopSubPub
+          stopSub
       fi
 }
 
@@ -426,7 +426,7 @@ subAll(){
   
         stopSubRemote
         if $localPcFlag;then
-                stopSubPub
+                stopSub
         fi  
         sumProAll=`expr $proNum1 + $sumPro1`
         sumSesAll=`expr $sesNum1 + $sumSes1`
@@ -460,7 +460,7 @@ subAllContinue(){
         queryContinue 
         stopSubRemote
         if $localPcFlag;then
-                stopSubPub
+                stopSub
         fi  
 }
 
@@ -708,7 +708,8 @@ retainQRemote(){
 stopRetainRemote(){
 	for ip in ${ip_array[*]}  
 	do
-	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${stopRetainCMD}"&
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${stopRetainCMD}"
+            sleep $pubRWait            
 	done
 }
 
@@ -1061,7 +1062,7 @@ subCcontinue(){
  done
  stopSubRemote
  if $localPcFlag;then
-      stopSubPub
+      stopSub
  fi  
 }
 
@@ -1139,7 +1140,7 @@ subCRecontinue(){
  done
  stopSubRemote
  if $localPcFlag;then
-      stopSubPub
+      stopSub
  fi  
 }
 
@@ -1156,7 +1157,8 @@ pubRetain(){
      #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
      newStart=`expr $pubRsNum + $pubRNum \* $step`
      ssh -p $sshPort $rootusr@$ip "sed -i 's/pubRsNum=${pubRsNum}/pubRsNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${pubRCMD}"&
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${pubRCMD}"
+     sleep $pubRWait
     ((step++))
  done
 }
@@ -1230,12 +1232,14 @@ queryPubRRemote(){
 subCRetain(){
  if $localPcFlag;then
     subCRLoop
+    sleep $waitForSession
  fi
  
  for ip in ${ip_array[*]}
  do
      if [ "$ip" = "$localPcIP" ];then continue;fi
      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCRCMD}"
+     sleep $pubRWait
  done
 }
 
@@ -1300,16 +1304,17 @@ querySubCR(){
 subCPubR(){
  #发布保留消息
  pubRetain
- sleep $pubRWait
  #查询发布情况
  queryPubRLocal
  queryPubRRemote
  #订阅保留消息
  subCRetain
- sleep $waitForSession
+ sleep $pubRWait
  #查询收到保留消息数量
  querySubCR
+ sleep $waitForSession
  stopRetainRemote
+ sleep $waitForSession
  stopSubPubR
 }
  
