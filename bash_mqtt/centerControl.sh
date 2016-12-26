@@ -1145,8 +1145,11 @@ queryMsgNum(){
 #统计每一轮收到消息数
 #统计收到总的消息数
 subCRecontinue(){
+  #会话统计
   subCReSessionPath=${sPath}/subCReSessionLogs/
+  #消息统计
   subCReMsgPath=${sPath}/subCReMsgLogs/
+  #总的消息统计
   subCReMsgAllPath=${sPath}/subCReMsgAllLogs/
   k=1
   spent=0
@@ -1165,8 +1168,6 @@ subCRecontinue(){
   sleep $subCReGap
   msg="=============取消订阅后第${k}次查询订阅情况===================="
   unsubCQuContinue $msg $subCReSessionPath
-  echo "r1======================"
-  echo $subCReRecieved
   totalMsgNum=`queryMsgNum $subCReMsgPath $msg $subCReRecieved $subCReNum`
   msg="======第${k}次统计收到消息总数为${totalMsgNum}======"
   reportLog $subCReMsgAllPath $msg
@@ -1367,6 +1368,7 @@ querySubCR(){
 subCPubR(){
  #发布保留消息
  pubRetain
+ sleep $pubRWait
  #查询发布情况
  queryPubRLocal
  queryPubRRemote
