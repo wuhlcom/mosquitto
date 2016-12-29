@@ -8,6 +8,8 @@ accBegin=$1
 accEnd=$2
 clientIDPre=$3
 accFileName=$4
+redisPort=7000
+redisSrvIP=192.168.10.99
 redisSet(){
      redisID=$1
      #中括号中判断变量一定要加引号
@@ -46,7 +48,8 @@ redisAcc(){
             echo `redisSet $clientID`>>$accFile
         done
   fi
-  redis-cli < $accFile >>$accLog
+ # redis-cli < $accFile >>$accLog
+ redis-cli -p $redisPort -h $redisSrvIP  < $accFile >>$accLog
 }
 
 redisAcc

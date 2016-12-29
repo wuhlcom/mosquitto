@@ -2,7 +2,6 @@
 # send ssh cmd to run script of remote client  
 #注意文件加载的顺序
 sPath=`dirname $0`
-#注释文件顺序
 source $sPath/mqttClient.sh
 source $sPath/logger.sh
 
@@ -15,6 +14,7 @@ subFixCMD=subfix
 pubFixCMD=pubfix
 subRsCMD=subresult
 subStopCMD=stopsub
+subStopScriptCMD=stopspecscript
 subPubCMD=subpub
 subCCMD=subcloop
 subCNoAccCMD=subcloopnoacc
@@ -100,7 +100,7 @@ queryLocal(){
    proNum1=0
    sesNum1=0
    #reportPath=$sPath/subLogs/
-   sleep $waitForSession
+   sleep $querySubGap
    i=0
    while true
    do
@@ -119,6 +119,8 @@ queryLocal(){
      fi
      sleep $querySubGap
   done
+  countMsg="-----${localPcIP}下发订阅数为${subRsNum}-----"
+  reportLog $reportPath $countMsg 
   proNum1=`echo $subRs|awk -F " " '{print $1}'`
   sesNum1=`echo $subRs|awk -F " " '{print $2}'`
   reportLog $reportPath $localPcIP $proNum1 $sesNum1 $exprNum
@@ -128,6 +130,7 @@ queryLocal(){
 subQuLocal(){
  subLogPath=$sPath/subSessionLogs/
  subLocal
+ sleep $subWait
  queryLocal $subLogPath $subFName $subNum
 }
 
@@ -153,16 +156,17 @@ queryRemote(){
  fileName=$2
  exprNum=$3
  i=0
+ expectNum=0
  sumPro1=0
  sumSes1=0
  #reportPath=$sPath/subLogs/
+ sleep $querySubGap
  for ip in ${ip_array[*]}
   do
     #排除本地IP
     if [ "$ip" = "$localPcIP" ];then continue;fi
     while true
     do
-      sleep $waitForSession
       subRsNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
       #pcSubNum=`echo $subResult|awk -F " " '{print $3}'`
       #订阅完成则查询订阅结果
@@ -176,7 +180,10 @@ queryRemote(){
         subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
 	break
       fi
+      sleep $querySubGap
    done
+   countMsg="-----${ip}下发订阅数为${subRsNum}-----"
+   reportLog $reportPath $countMsg 
    proNum=`echo $subRs|awk -F " " '{print $1}'`
    sesNum=`echo $subRs|awk -F " " '{print $2}'`
    reportLog $reportPath $ip $proNum $sesNum $exprNum
@@ -290,7 +297,7 @@ subQuRemote(){
   #与subQuLocal路径保持一致
   subLogPath=$sPath/subSessionLogs/
   subRemote
-  sleep $waitForSession
+  sleep $subWait
   queryRemote $subLogPath $subFName $subNum
 }
 
@@ -301,7 +308,8 @@ stopSubRemote(){
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
  	    #必须加&
-	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"&
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopScriptCMD}"&
 	done  
 }
 
@@ -375,25 +383,27 @@ pubFixRemote(){
 #多台机器同时长期订阅，订阅后多台机器同时不停发布消息
 #直到收到消息数达到预期目标或执行超时才停止
 subFixAll(){
-        subFixLogPath=$sPath/subFixSessionLogs/
-        subFixRsLogPath=$sPath/subFixMsgLogs/
+        subFixSessionLogPath=$sPath/subFixSessionLogs/
+        subFixMsgLogPath=$sPath/subFixMsgLogs/
 	count=1
         realNum=0
         skipTime=0
         subFixRemote
+        sleep $subFixWait
         if $localPcFlag;then
                 subFixLocal
-		sleep $waitForSession
- 		queryLocal $subFixLogPath $subFixFName $subFixNum
+                sleep $subFixWait
+ 		queryLocal $subFixSessionLogPath $subFixFName $subFixNum
         fi
-        queryRemote $subFixLogPath $subFixFName $subFixNum
+        queryRemote $subFixSessionLogPath $subFixFName $subFixNum
 
        while true 
        do
          pubFixLocal
          pubFixRemote
+         sleep $WaitForSession
          msg="=============第${count}次查询订阅消息结果=============="
-         realNum=`queryFixMsgNum $subFixRsLogPath $msg $subFixRecieved $subFixCount`
+         realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
             break
          fi
@@ -410,11 +420,12 @@ subFixAll(){
       stopSubRemote
       if $localPcFlag;then
           stopSub
+          stopSpecScript
       fi
 }
 
 #testcase 1
-#长期订阅，订阅指定数量，测试服务端最大支持订阅数
+#订阅指定数量，测试服务端最大支持订阅数
 subAll(){
         proNum1=0
         sesNum1=0
@@ -425,10 +436,12 @@ subAll(){
                 subQuLocal
                 expectNum=`expr $expectNum + $subNum`
         fi
-  
+        sleep $waitForSession
         stopSubRemote
         if $localPcFlag;then
                 stopSub
+                sleep $waitForSession
+		stopSpecScript
         fi  
         sumProAll=`expr $proNum1 + $sumPro1`
         sumSesAll=`expr $sesNum1 + $sumSes1`
@@ -458,13 +471,17 @@ subAllContinue(){
         sumPro2=0
         sumSes2=0
 	subRemote
+        sleep $subWait
         if $localPcFlag;then
                 subLocal
+                sleep $subWait
         fi
         queryContinue 
         stopSubRemote
         if $localPcFlag;then
                 stopSub
+                sleep $waitForSession
+		stopSpecScript
         fi  
 }
 
@@ -716,7 +733,7 @@ stopRetainRemote(){
 	for ip in ${ip_array[*]}  
 	do
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${stopRetainCMD}"
-            sleep $pubRWait            
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopScriptCMD}"&
 	done
 }
 
@@ -745,6 +762,8 @@ subCQuLocal(){
         ((i++))
 	sleep $querySubGap
   done
+  countMsg="-----${localPcIP}下发订阅数为${subCnumber}-----"
+  reportLog $reportPath $countMsg 
   subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
   subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
   reportLog $reportPath $localPcIP $subCProNum $subCSesNum $subCNum
@@ -806,6 +825,8 @@ subCQuRemote(){
                 fi
                 sleep $querySubGap
      done
+     countMsg="-----${ip}下发订阅数为${num}-----"
+     reportLog $reportPath $countMsg 
      proNum=`echo $subRs|awk -F " " '{print $1}'`
      sesNum=`echo $subRs|awk -F " " '{print $2}'`
      reportLog $reportPath $ip $proNum $sesNum $subCNum
@@ -867,6 +888,8 @@ subCQuContinue(){
                 ((queryNum++))
                 sleep $querySubGap
      done
+     countMsg="-----${ip}下发订阅数为${num}-----"
+     reportLog $reportPath $countMsg 
      proNum=`echo $subCRsR|awk -F " " '{print $1}'`
      sesNum=`echo $subCRsR|awk -F " " '{print $2}'`
      reportLog $reportPath $ip $proNum $sesNum $expect
@@ -890,6 +913,8 @@ subCQuContinue(){
         ((i++))
         sleep $querySubGap
      done
+     countMsg="-----${localPcIP}下发订阅数为${subCnumber}-----"
+     reportLog $reportPath $countMsg 
      subCProNum=`echo $subCRs|awk -F " " '{print $1}'`
      subCSesNum=`echo $subCRs|awk -F " " '{print $2}'`
      reportLog $reportPath $localPcIP $subCProNum $subCSesNum $expect
@@ -1043,7 +1068,7 @@ subCcontinue(){
      subCLocal
  fi
  subCRemote
- sleep $waitForSession
+ sleep $subCWait 
 
  msg="====================订阅后第${k}次查询订阅情况======================="
  subCQuContinue $msg $reportPath $subCFName $subCNum
@@ -1074,6 +1099,7 @@ subCcontinue(){
  stopSubRemote
  if $localPcFlag;then
       stopSub
+      stopSpecScript
  fi  
 }
 
@@ -1158,9 +1184,10 @@ subCRecontinue(){
   #第一次调用需创建账户
   if $localPcFlag;then
      subCReLoop
+     sleep $subCReWait
   fi
   subCReRemote
-  sleep $waitForSession
+  sleep $subCReWait
   msg="====================订阅后第${k}次查询订阅情况======================="
   subCQuContinue $msg $subCReSessionPath $subCReFName $subCReNum
 
@@ -1200,6 +1227,7 @@ subCRecontinue(){
  stopSubRemote
  if $localPcFlag;then
       stopSub
+      stopSpecScript
  fi  
 }
 
@@ -1382,5 +1410,6 @@ subCPubR(){
  stopRetainRemote
  #停止本地订阅和删除保留消息
  stopSubPubR
+ stopSpecScript
 }
  

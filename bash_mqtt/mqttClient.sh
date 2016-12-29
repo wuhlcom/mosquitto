@@ -29,6 +29,7 @@ sub(){
         if [ -z "$msglog" ];then
           mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
         else
+          #注意">>"前后都有空格
           mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd >> $msglog&
         fi
      else 
@@ -58,7 +59,7 @@ createAccount(){
     SNum=$2
     ENum=$3
     FName=$4
-    ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $SNum $ENum $IDPre $FName"
+    ssh $rootusr@$redisSrvIP "${remote_dir}/mqttAuth.sh $SNum $ENum $IDPre $FName"
    fi
 }
 
@@ -163,7 +164,7 @@ subC(){
 subCLoopNoAcc(){
         echoFlag=false
         j=0
-        relog=$sPath/$subCReieved
+        relog=${sPath}/${subCRecieved}
         nulog=${sPath}/${subCFName}
         : > $relog
         for i in `seq $subCsNum $subCeNum`
@@ -331,7 +332,9 @@ stopScript(){
 	  else
                scriptName=$1
           fi
-	  pids=`ps -ef |grep ${scriptName}|grep "\/bin\/bash"|awk -F " " '{print $2}'`
+	  bash_pids=`ps -ef |grep ${scriptName}|grep "\/bin\/bash"|awk -F " " '{print $2}'`
+	  ssh_pids=`ps -ef |grep ${scriptName}|grep "ssh"|awk -F " " '{print $2}'`
+          pids="${bash_pids} ${ssh_pids}"
 	  OLD_IFS="$IFS"
 	  IFS=" "
 	  arr=($pids)
@@ -340,6 +343,12 @@ stopScript(){
 	  do
 	    kill -9 $pid
 	  done
+}
+
+##
+stopSpecScript(){
+ stopScript "logger.sh"
+ stopScript "mqttClient.sh"
 }
 
 #stop sub
@@ -542,6 +551,9 @@ case $1 in
      ;;
    "stopsub")
      stopSub
+     ;;
+   "stopspecscript")
+     stopSpecScript
      ;;
    "subpub")
      subPub
