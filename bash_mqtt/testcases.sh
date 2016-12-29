@@ -1,28 +1,26 @@
 #!/bin/bash
 #auth:wuhongliang
-#date:2016-11-24
+#date:2016-12-14
 cuPath=`dirname $0`
-#source $cuPath/centerControl.sh
 source $cuPath/tcMethods.sh
 
-#testcase 1
 case $1 in
    "suball")
      subAll 
      ;;
-   "suballc")
+   "suballcon")
      subAllContinue
      ;;
-   "subcc")
+   "subccon")
      subCcontinue
      ;;
-   "subfix")
+   "subfixall")
      subFixAll
      ;;
    "subcpubr")
      subCPubR
      ;;
-   "subcre")
+   "subcrecon")
      subCRecontinue
      ;;
    "all")

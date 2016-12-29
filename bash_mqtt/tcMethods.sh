@@ -97,6 +97,7 @@ subCcontinue(){
        fi
        #远程订阅
        subCNoAccRemote
+       sleep $subCWait 
        msg="====================订阅后第${k}次查询订阅情况======================="
        #查询
        subCQuContinue $msg $reportPath $subCFName $subCNum
