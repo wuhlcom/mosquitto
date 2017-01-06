@@ -16,6 +16,15 @@ subAll(){
                 expectNum=`expr $expectNum + $subNum`
         fi
         sleep $waitForSession
+        logDir="${cuPath}/subAllRecords"
+        logDirRemote="${sPath}/subAllRecords"
+        subProcess $logDir subAll
+        subSession $logDir subAll
+ 	for ip in ${ip_array[*]}
+	do
+	   ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subAll"
+	   ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subAll"
+	done
         stopSubRemote
         if $localPcFlag;then
                 stopSub
@@ -49,12 +58,21 @@ subAllContinue(){
         sesNum2=0
         sumPro2=0
         sumSes2=0
-	subRemote
+	subRemote&
         sleep $subWait
         if $localPcFlag;then
                 subLocal
                 sleep $subWait
         fi
+        logDir="${cuPath}/subAllConRecords"
+        logDirRemote="${sPath}/subAllConRecords"
+        subProcess $logDir subAllcon
+        subSession $logDir subAllcon
+ 	for ip in ${ip_array[*]}
+	do
+	   ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subAllcon"
+	   ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subAllcon"
+	done
         queryContinue 
         stopSubRemote
         if $localPcFlag;then
@@ -68,14 +86,14 @@ subAllContinue(){
 #单次订阅，发布，断开
 #反复操作5分钟
 #每一轮要求订阅数(进程和会话数)，发布后收到消息数，断开数要与预期一致
-subCcontinue(){
+subCContinue(){
  k=1
  spent=0
- reportPath=${sPath}/subCContinueSessionLogs/
+ reportPath=${sPath}/subCcontinueSessionLogs/
 
  #第一次调用需创建账户
  if $localPcFlag;then
-     subCLocal
+     subCLocal&
  fi
  subCRemote
  sleep $subCWait 
@@ -86,14 +104,14 @@ subCcontinue(){
  sleep $subCGap 
  msg="====================取消订阅后第${k}次查询订阅情况===================="
  unsubCQuContinue $msg $reportPath
-
+ sleep $subCGap 
  #后续调用不再创建账户
  while [ "$spent" -le "$subCTime" ]
  do
       ((k++))
        if $localPcFlag;then
          #本地订阅
-         subCLoopNoAcc
+         subCLoopNoAcc&
        fi
        #远程订阅
        subCNoAccRemote
@@ -105,6 +123,7 @@ subCcontinue(){
        pubCNoAcc
        msg="====================取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $reportPath
+       sleep $subCGap
        spent=`expr $k \* $subCGap`
  done
  stopSubRemote
@@ -118,25 +137,24 @@ subCcontinue(){
 #多台机器同时长期订阅，订阅后多台机器同时不停发布消息
 #直到收到消息数达到预期目标或执行超时才停止
 subFixAll(){
-        subFixSessionLogPath=$sPath/subFixSessionLogs/
-        subFixMsgLogPath=$sPath/subFixMsgLogs/
+        subFixSessionLogPath=$sPath/subFixAllSessionLogs/
+        subFixMsgLogPath=$sPath/subFixAllMsgLogs/
 	count=1
         realNum=0
         skipTime=0
-        subFixRemote
-        sleep $subFixWait
+        subFixRemote&
         if $localPcFlag;then
                 subFixLocal
-                sleep $subFixWait
  		queryLocal $subFixSessionLogPath $subFixFName $subFixNum
         fi
+        sleep $subFixWait
         queryRemote $subFixSessionLogPath $subFixFName $subFixNum
 
        while true 
        do
          pubFixLocal
          pubFixRemote
-         sleep $WaitForSession
+         sleep $waitForSession
          msg="=============第${count}次查询订阅消息结果=============="
          realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
@@ -193,13 +211,13 @@ subCPubR(){
 #统计每一轮会话数
 #统计每一轮收到消息数
 #统计收到总的消息数
-subCRecontinue(){
+subCReContinue(){
   #会话统计
-  subCReSessionPath=${sPath}/subCReSessionLogs/
+  subCReSessionPath=${sPath}/subCReContinueSessionLogs/
   #消息统计
-  subCReMsgPath=${sPath}/subCReMsgLogs/
+  subCReMsgPath=${sPath}/subCReContinueMsgLogs/
   #总的消息统计
-  subCReMsgAllPath=${sPath}/subCReMsgAllLogs/
+  subCReMsgAllPath=${sPath}/subCReContinueMsgAllLogs/
   k=1
   spent=0
   msgNum=0
@@ -207,7 +225,6 @@ subCRecontinue(){
   #第一次调用需创建账户
   if $localPcFlag;then
      subCReLoop
-     sleep $subCReWait
   fi
   subCReRemote
   sleep $subCReWait

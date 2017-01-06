@@ -12,7 +12,7 @@ case $1 in
      subAllContinue
      ;;
    "subccon")
-     subCcontinue
+     subCContinue
      ;;
    "subfixall")
      subFixAll
@@ -21,22 +21,22 @@ case $1 in
      subCPubR
      ;;
    "subcrecon")
-     subCRecontinue
+     subCReContinue
      ;;
    "all")
      subAll
      sleep $tcGap
      subAllContinue    
      sleep $tcGap
-     subCcontinue
+     subCContinue
      sleep $tcGap
      subFixAll
      sleep $tcGap
      subCPubR
      sleep $tcGap
-     subCRecontinue
+     subCReContinue
    ;;
    *)
-    echo "Param error!Please check!"
+    echo "Parameters error!Please check!"
     ;;
 esac

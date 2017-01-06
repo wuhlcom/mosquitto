@@ -42,7 +42,7 @@ reportLog(){
   logPath=$1
   if [ "$#" = 2 ];then
     message=$2
-    write_log $message
+    writeLog $message
   else 
 	ipaddr=$2
 	proNum=$3
@@ -56,13 +56,13 @@ reportLog(){
         if [ -z "$proNum" ];then 
 		proNum=0
 		nulmsg="prosess num is null"
-		write_log $nulmsg
+		writeLog $nulmsg
 	fi
         
 	if [ -z "$sesNum" ];then 
 		sesNum=0
 		nulmsg="session num is null"
-		write_log $nulmsg
+		writeLog $nulmsg
 	fi
 	#不能有空格，有空格会当成多个变量的值
 	total="Client_$ipaddr:预期${client_type}数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
@@ -84,9 +84,9 @@ reportLog(){
 	   proRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,多于预期的${expect}个,相差`expr $sesNum - $expect`个,有重复的client"
 	fi
 
-	write_log $total
-	write_log $proRs 
-	write_log $sesRs
+	writeLog $total
+	writeLog $proRs 
+	writeLog $sesRs
  fi
 }
 
@@ -130,7 +130,7 @@ queryLocal(){
 
 #本地订阅并记录结果
 subQuLocal(){
- subLogPath=$sPath/subSessionLogs/
+ subLogPath=$sPath/subAllSessionLogs/
  subLocal
  sleep $subWait
  queryLocal $subLogPath $subFName $subNum
@@ -297,7 +297,7 @@ queryContinue(){
 #远程订阅并记录结果
 subQuRemote(){
   #与subQuLocal路径保持一致
-  subLogPath=$sPath/subSessionLogs/
+  subLogPath=$sPath/subAllSessionLogs/
   subRemote
   sleep $subWait
   queryRemote $subLogPath $subFName $subNum
@@ -1031,7 +1031,7 @@ reportPubLog(){
   logPath=$1
   if [ "$#" = 2 ];then
     message=$2
-    write_log $message
+    writeLog $message
   else
         ipaddr=$2
         pubnum=$3
@@ -1041,13 +1041,13 @@ reportPubLog(){
         if [ "$pubnum" -lt "$expect" ];then
            pubrRs="Client_$ipaddr:实际上有${pubnum}个mosquitto_pub个,少于预期的${expect}个,相差`expr $expect - $pubnum`个"
         fi
-  	write_log $total
-  	write_log $pubrRs
+  	writeLog $total
+  	writeLog $pubrRs
   fi
 }
 
 queryPubRLocal(){
- reportPath=${sPath}/pubRCountLogs/
+ reportPath=${sPath}/subCPubRCountLogs/
  i=0
  pubrNum=0
  if $localPcFlag;then
@@ -1070,7 +1070,7 @@ queryPubRLocal(){
 }
  
 queryPubRRemote(){
- reportPath=$sPath/pubRCountLogs/
+ reportPath=$sPath/subCPubRCountLogs/
  for ip in ${ip_array[*]}
  do
     i=0
@@ -1163,4 +1163,3 @@ querySubCR(){
  msg="总共预期收到保留消息${expectNum},实际收到${sum}"
  reportPubLog $reportPath $msg
 }
-

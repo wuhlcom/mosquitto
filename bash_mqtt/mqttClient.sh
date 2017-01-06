@@ -66,7 +66,7 @@ createAccount(){
 subFixNoAcc(){
    echoFlag=false
    if $capFlag;then
-         cap
+         cap "subFix"
    fi
    
    relog=${sPath}/${subFixRecieved}	
@@ -98,7 +98,7 @@ subFix(){
 #mosquitto_sub
 subLoopNoAcc(){
 	if $capFlag;then
-	 cap
+	 cap "subLoop"
 	fi
           
 	j=0
@@ -123,7 +123,7 @@ subLoopNoAcc(){
 			: > $nulog
 	        	echo `expr $i - $sSubNum + 1` >> $nulog	
 	done
-	#monitor_log subresult&
+	#monitorLog subresult&
 	$sPath/logger.sh monitorlog&
 }
 
@@ -353,15 +353,16 @@ stopSpecScript(){
 
 #stop sub
 stopSub(){
-	  pkill mosquitto_sub
-	  pkill mosquitto_sub
+	  pkill -9 mosquitto_sub
+	  pkill -9 mosquitto_sub
+ 	  pkill -9 tcpdump
 }
 
 #先订阅后发布，主题保持不变
 subPubNoAcc(){
 	echoFlag=false
 	if $capFlag;then
-	 cap
+	 cap "subPub"
 	fi
  
 	j=0
@@ -446,7 +447,7 @@ pubRLoop(){
 subRLoopNoAcc(){
 	echoFlag=false
 	if $capFlag;then
-	 cap
+	 cap "subRLoop"
 	fi
 
         relog=${subPubRRecieved}
@@ -483,7 +484,7 @@ subPubRNoAcc(){
   j=0
  
   if $capFlag;then
-    cap
+    cap "subPubR"
   fi
   
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
