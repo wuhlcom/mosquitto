@@ -39,15 +39,15 @@ local_query=$sPath/logger.sh
 
 #记录进程和会话结果
 reportLog(){
-  logPath=$1
+  local logPath=$1
   if [ "$#" = 2 ];then
-    message=$2
+    local message=$2
     writeLog $message
   else 
-	ipaddr=$2
-	proNum=$3
-	sesNum=$4
-        expect=$5
+        local ipaddr=$2
+        local proNum=$3
+        local sesNum=$4
+        local expect=$5
         if [ "-z" $6 ];then
             client_type=mosquitto_sub 
 	else
