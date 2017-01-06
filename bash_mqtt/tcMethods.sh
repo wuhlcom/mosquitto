@@ -64,8 +64,8 @@ subAllContinue(){
                 subLocal
                 sleep $subWait
         fi
-        logDir="${cuPath}/subAllConRecords"
-        logDirRemote="${sPath}/subAllConRecords"
+        logDir="${cuPath}/subAllContinueRecords"
+        logDirRemote="${sPath}/subAllContinueRecords"
         subProcess $logDir subAllcon
         subSession $logDir subAllcon
  	for ip in ${ip_array[*]}
@@ -89,8 +89,7 @@ subAllContinue(){
 subCContinue(){
  k=1
  spent=0
- reportPath=${sPath}/subCcontinueSessionLogs/
-
+ reportPath=${sPath}/subCContinueSessionLogs/
  #第一次调用需创建账户
  if $localPcFlag;then
      subCLocal&

@@ -97,9 +97,9 @@ subLocal(){
 
 #查询本地订阅结果
 queryLocal(){
-   reportPath=$1
-   fileName=$2
-   exprNum=$3
+   local reportPath=$1
+   local fileName=$2
+   local exprNum=$3
    proNum1=0
    sesNum1=0
    #reportPath=$sPath/subLogs/
@@ -154,9 +154,9 @@ subRemote(){
 
 #本地下达指令查询远程订阅结果
 queryRemote(){
- reportPath=$1
- fileName=$2
- exprNum=$3
+ local reportPath=$1
+ local fileName=$2
+ local exprNum=$3
  i=0
  expectNum=0
  sumPro1=0
@@ -317,9 +317,9 @@ stopSubRemote(){
 
 #查询收到的消息
 queryFixMsgNum(){
-        reportPath=$1
-        msg=$2
-        fileName=$3
+        local reportPath=$1
+        local msg=$2
+        local fileName=$3
         numbers=$4 
         reportLog $reportPath $msg 
 
@@ -756,13 +756,13 @@ subCQRemote(){
 }
 
 subCQuContinue(){
-   msg=$1
-   reportPath=$2
-   fileName=$3
-   expect=$4
+   local msg=$1
+   local reportPath=$2
+   local fileName=$3
+   local expect=$4
    reportLog $reportPath $msg
-   sumPro=0
-   sumSes=0
+   local sumPro=0
+   local sumSes=0
    for ip in ${ip_array[*]}
    do
      num=0
@@ -976,9 +976,9 @@ subCReNoAccRemote(){
 
 #查询收到的消息数量
 queryMsgNum(){
-        reportPath=$1
-        msg=$2
-        fileName=$3
+        local reportPath=$1
+	local msg=$2
+	local fileName=$3
         msgNum=$4 
 	num=0
         sum=0
