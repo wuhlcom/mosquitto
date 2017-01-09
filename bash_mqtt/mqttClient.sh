@@ -13,16 +13,16 @@ echoFlag=true
 scp ${sPath}/mqtt.conf $rootusr@${srv_ip}:${remote_dir}
 #mosquitto_sub
 sub(){
-      local subtopic=$1
-      local subid=$2
+      subtopic=$1
+      subid=$2
       if $mqttAuth;then
          if [ -z "$3" ] || [ -z "$4" ] ;then
               echo "ERROR:Please input the mosquitto client usrname and password!"
          fi
-         local usr=$3
-         local passwd=$4
-         local subqos=$5
-         local msglog=$6
+         usr=$3
+         passwd=$4
+         subqos=$5
+         msglog=$6
         if $echoFlag;then
                  echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
         fi
@@ -34,8 +34,8 @@ sub(){
         fi
      else 
        if [ -n "$3" ];then
-          local subqos=$3
-          local msglog=$4
+          subqos=$3
+          msglog=$4
           if $echoFlag;then
 		 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
 	  fi
@@ -55,10 +55,10 @@ sub(){
 
 createAccount(){
    if $mqttAuth;then
-    local IDPre=$1
-    local SNum=$2
-    local ENum=$3
-    local FName=$4
+    IDPre=$1
+    SNum=$2
+    ENum=$3
+    FName=$4
     ssh $rootusr@$redisSrvIP "${remote_dir}/mqttAuth.sh $SNum $ENum $IDPre $FName"
    fi
 }
@@ -69,13 +69,13 @@ subFixNoAcc(){
          cap "subFix"
    fi
    
-   local relog=${sPath}/${subFixRecieved}	
-   local nulog=${sPath}/${subFixFName}	
+   relog=${sPath}/${subFixRecieved}	
+   nulog=${sPath}/${subFixFName}	
    : > $relog	
    j=0
    for i in `seq $subFixSNum $subFixENum`
    do
-      local subID="$subFixIDPre$i"
+      subID="$subFixIDPre$i"
       if $mqttAuth;then
         sub $subFixTopic $subID $defaultUsr $defaultPasswd $j $relog	
       else
@@ -102,13 +102,13 @@ subLoopNoAcc(){
 	fi
           
 	j=0
-	local nulog=${sPath}/${subFName}
+	nulog=${sPath}/${subFName}
         #create mqtt usr passwd
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
 	for i in `seq $sSubNum $eSubNum`
 	do	
-		local subTopic="${subTopicPre}${i}"
-		local subID="${subIDPre}${i}"
+	 subTopic="${subTopicPre}${i}"
+	 subID="${subIDPre}${i}"
                 if $mqttAuth;then
 		   		sub $subTopic $subID $defaultUsr $defaultPasswd $j
   		else
@@ -134,20 +134,20 @@ subLoop(){
 
 #一次性订阅
 subC(){
-      local subtopic=$1
-      local subid=$2
+       subtopic=$1
+       subid=$2
       if [ -z "$3" ] || [ -z "$4" ] ;then
             echo "ERROR:Please input the mosquitto client usrname and password!"
       fi
       
-      local usr=$3
-      local passwd=$4
-      local subqos=$5
-      local relog=$6
+       usr=$3
+       passwd=$4
+       subqos=$5
+       relog=$6
       if [ -z "$7" ];then
-        local Ccount=$subCcount
+        Ccount=$subCcount
       else
-        local Ccount=$7
+        Ccount=$7
       fi
 
       if $echoFlag;then
@@ -164,12 +164,12 @@ subC(){
 subCLoopNoAcc(){
         echoFlag=false
         j=0
-        local relog=${sPath}/${subCRecieved}
-        local nulog=${sPath}/${subCFName}
+        relog=${sPath}/${subCRecieved}
+        nulog=${sPath}/${subCFName}
         : > $relog
         for i in `seq $subCsNum $subCeNum`
         do
-               local subID="$subCIDPre$i"
+                subID="$subCIDPre$i"
                 subC $subCTopic $subID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
@@ -190,12 +190,12 @@ subCLoop(){
 subCReLoopNoAcc(){
         echoFlag=false
         j=0
-        local relog=$sPath/$subCReRecieved
-        local nulog=${sPath}/${subCReFName}
+        relog=$sPath/$subCReRecieved
+        nulog=${sPath}/${subCReFName}
         : > $relog
         for i in `seq $subCResNum $subCReeNum`
         do
-                local subID="$subCReIDPre$i"
+                subID="$subCReIDPre$i"
                 subC $subCReTopic $subID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
@@ -216,13 +216,13 @@ subCReLoop(){
 subCRNoAcc(){
         echoFlag=false
         j=0
-        local relog=${sPath}/${subCPubRRecieved}
-        local nulog=${sPath}/${subRFName}
+        relog=${sPath}/${subCPubRRecieved}
+        nulog=${sPath}/${subRFName}
         : > $relog
         for i in `seq $pubRsNum $pubReNum`
         do
-                local subRID="$subRIDPre$i"
-                local subCRTopic="$pubRTopicPre$i"
+                subRID="$subRIDPre$i"
+                subCRTopic="$pubRTopicPre$i"
                 subC $subCRTopic $subRID $defaultUsr $defaultPasswd $j $relog
                 j=`expr $j + 1`
                 if [ $j -ge 3 ]; then
@@ -240,20 +240,20 @@ subCRLoop(){
 }
 #mqtt pub
 pub(){
-        local pubtopic=$1
-        local pubmsg=$2
-	local pubid=$3
+        pubtopic=$1
+        pubmsg=$2
+	pubid=$3
         if $mqttAuth;then
                  if [ -z "$3" ] || [ -z "$4" ] ;then
               		echo "ERROR:Please input the mosquitto client usrname and password!"
 	         fi
-        	 local pubqos=$4
-        	 local usr=$5
-	         local passwd=$6
+        	 pubqos=$4
+        	 usr=$5
+	         passwd=$6
 		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
         else
 		if [ -n "$4" ];then
-        		local pubqos=$4
+        		pubqos=$4
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos&
 		else
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid&
@@ -291,9 +291,9 @@ pubLoopNoAcc(){
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sPubNum $ePubNum $pubIDPre ${intf}-${cIP}-pub"
 	for i in `seq $sPubNum $ePubNum`
 	do
-		local pubTopic="$pubTopicPre$i"
-		local pubMsg="$pubMsgPre$i"
-		local pubID="$pubIDPre$i"
+		pubTopic="$pubTopicPre$i"
+		pubMsg="$pubMsgPre$i"
+		pubID="$pubIDPre$i"
   		if $mqttAuth;then
 			pub $pubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
         	else
@@ -310,8 +310,8 @@ pubLoop(){
 pubFixNoAcc(){
 	for i in `seq $pubFixSNum $pubFixENum`
 	do
-		local pubMsg="$pubMsgPre$i"
-		local pubID="$pubIDPre$i"
+		 pubMsg="$pubMsgPre$i"
+		 pubID="$pubIDPre$i"
   		if $mqttAuth;then
 			pub $subFixTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
         	else
@@ -328,9 +328,9 @@ pubFix(){
 #stopScipt
 stopScript(){
           if [ -z "$1" ];then
-	       local scriptName=`basename $0`
+	        scriptName=`basename $0`
 	  else
-               local scriptName=$1
+                scriptName=$1
           fi
 	  bash_pids=`ps -ef |grep ${scriptName}|grep "\/bin\/bash"|awk -F " " '{print $2}'`
 	  ssh_pids=`ps -ef |grep ${scriptName}|grep "ssh"|awk -F " " '{print $2}'`
@@ -366,12 +366,12 @@ subPubNoAcc(){
 	fi
  
 	j=0
-	local relog=$sPath/${subPubRecieved}
+	relog=$sPath/${subPubRecieved}
 	: > $relog
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubSubSNum $pubSubENum $subIDPre ${intf}-${cIP}-pubsub"
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
-			local subID="$subIDPre$i"
+			subID="$subIDPre$i"
 			if $mqttAuth;then
 			  sub $subPubTopic $subID $defaultUsr $defaultPasswd $j $relog
 			else
@@ -389,8 +389,8 @@ subPubNoAcc(){
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $subPubSNum $subPubENum $pubIDPre ${intf}-${cIP}-subpub"
 	for i in `seq $subPubSNum $subPubENum`
 	do
-			local pubID="$pubIDPre$i"
-			local pubMsg="$pubMsgPre$i"
+			pubID="$pubIDPre$i"
+			pubMsg="$pubMsgPre$i"
 			if $mqttAuth;then
 			  pub $subPubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
  			else
@@ -407,12 +407,12 @@ subPub(){
 
 #mqtt pub retain
 pubR(){
-        local pubtopic=$1
-        local pubmsg=$2
-	local pubid=$3
+        pubtopic=$1
+        pubmsg=$2
+	pubid=$3
 	if $mqttAuth;then
-		local usrname=$4
-		local passwd=$5
+		usrname=$4
+		passwd=$5
 		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r -u $usrname -P $passwd&
 	else
 		mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubQos -r&
@@ -422,12 +422,12 @@ pubR(){
 #plenty of mqtt pub retain msg
 pubRLoopNoAcc(){
      # ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-pubR"
-      local nulog=$sPath/$pubRFName
+      nulog=$sPath/$pubRFName
       for i in `seq $pubRsNum $pubReNum`
       do
-    	local pubRTopic="${pubRTopicPre}${i}"
-	local pubRMsg="${pubRMsgPre}${i}"
-	local pubRID="${pubRIDPre}${i}"
+    	pubRTopic="${pubRTopicPre}${i}"
+	pubRMsg="${pubRMsgPre}${i}"
+	pubRID="${pubRIDPre}${i}"
   	if $mqttAuth;then
 	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd 
 	else
@@ -450,14 +450,14 @@ subRLoopNoAcc(){
 	 cap "subRLoop"
 	fi
 
-        local relog=${subPubRRecieved}
+        relog=${subPubRRecieved}
         : > $relog
 	j=0
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-subR"
 	for i in `seq $pubRsNum $pubReNum`
 	do	
-                local pubRTopic="$pubRTopicPre${i}"
-		local subRID="$subRIDPre$i"
+                pubRTopic="$pubRTopicPre${i}"
+		subRID="$subRIDPre$i"
 		if $mqttAuth;then
   		   sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
 		else
@@ -479,7 +479,7 @@ subRLoop(){
 #pub retain message,then sub them
 subPubRNoAcc(){
   echoFlag=false
-  local relog=${subPubRRecieved}
+  relog=${subPubRRecieved}
   : > $relog
   j=0
  
@@ -490,9 +490,9 @@ subPubRNoAcc(){
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
   for i in `seq $pubRsNum $pubReNum`
   do
-	    local pubRTopic="${pubRTopicPre}${i}"
-	    local pubRMsg="${pubRMsgPre}${i}"
-	    local pubRID="${pubRIDPre}${i}"
+	    pubRTopic="${pubRTopicPre}${i}"
+	    pubRMsg="${pubRMsgPre}${i}"
+	    pubRID="${pubRIDPre}${i}"
             if $mqttAuth;then 
 	     pubR $pubRTopic $pubRMsg $pubRID $defaultUsr $defaultPasswd
             else
@@ -503,8 +503,8 @@ subPubRNoAcc(){
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-pubsubR"
   for i in `seq $pubRsNum $pubReNum`
   do	
-            local pubRTopic="${pubRTopicPre}${i}"
-            local subRID="${subRIDPre}${i}"
+            pubRTopic="${pubRTopicPre}${i}"
+            subRID="${subRIDPre}${i}"
             if $mqttAuth;then 
 	        sub $pubRTopic $subRID $defaultUsr $defaultPasswd $j $relog
 	    else
@@ -528,8 +528,8 @@ subPubR(){
 stopPubR(){
  for i in `seq $pubRsNum $pubReNum`
  do
-     local pubRTopic="${pubRTopicPre}${i}"
-     local pubRID="${pubRIDPre}${i}"
+     pubRTopic="${pubRTopicPre}${i}"
+     pubRID="${pubRIDPre}${i}"
      if $mqttAuth;then
         mosquitto_pub -t $pubRTopic -n -h $srv_ip -p $srv_port -i $pubRID -r -u $defaultUsr -P $defaultPasswd&
      else

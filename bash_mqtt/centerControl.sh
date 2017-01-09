@@ -39,15 +39,15 @@ local_query=$sPath/logger.sh
 
 #记录进程和会话结果
 reportLog(){
-  local logPath=$1
+  logPath=$1
   if [ "$#" = 2 ];then
-    local message=$2
+    message=$2
     writeLog $message
   else 
-        local ipaddr=$2
-        local proNum=$3
-        local sesNum=$4
-        local expect=$5
+        ipaddr=$2
+        proNum=$3
+        sesNum=$4
+        expect=$5
         if [ "-z" $6 ];then
             client_type=mosquitto_sub 
 	else
@@ -97,9 +97,9 @@ subLocal(){
 
 #查询本地订阅结果
 queryLocal(){
-   local reportPath=$1
-   local fileName=$2
-   local exprNum=$3
+   reportPath=$1
+   fileName=$2
+   exprNum=$3
    proNum1=0
    sesNum1=0
    #reportPath=$sPath/subLogs/
@@ -154,9 +154,9 @@ subRemote(){
 
 #本地下达指令查询远程订阅结果
 queryRemote(){
- local reportPath=$1
- local fileName=$2
- local exprNum=$3
+ reportPath=$1
+ fileName=$2
+ exprNum=$3
  i=0
  expectNum=0
  sumPro1=0
@@ -317,9 +317,9 @@ stopSubRemote(){
 
 #查询收到的消息
 queryFixMsgNum(){
-        local reportPath=$1
-        local msg=$2
-        local fileName=$3
+        reportPath=$1
+        msg=$2
+        fileName=$3
         numbers=$4 
         reportLog $reportPath $msg 
 
