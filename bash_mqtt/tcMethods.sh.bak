@@ -17,7 +17,7 @@ subAll(){
         fi
         sleep $waitForSession
         logDir="${cuPath}/subAllRecords"
-        logDirRemote="${remote_dir}/subAllRecords"
+        logDirRemote="${sPath}/subAllRecords"
         subProcess $logDir subAll
         subSession $logDir subAll
  	for ip in ${ip_array[*]}
@@ -65,7 +65,7 @@ subAllContinue(){
                 sleep $subWait
         fi
         logDir="${cuPath}/subAllContinueRecords"
-        logDirRemote="${remote_dir}/subAllContinueRecords"
+        logDirRemote="${sPath}/subAllContinueRecords"
         subProcess $logDir subAllcon
         subSession $logDir subAllcon
  	for ip in ${ip_array[*]}
@@ -117,19 +117,11 @@ subCContinue(){
        sleep $subCWait 
        msg="====================订阅后第${k}次查询订阅情况======================="
        #查询
-       subCQuContinue $msg $reportPath $subCFName $subCNum 
-       rsSub=$?	 
-	   if [ "$rsSub" = "1" ];then 	     
-	     break; 
-	   fi
+       subCQuContinue $msg $reportPath $subCFName $subCNum
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCNoAcc
        msg="====================取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $reportPath
-	   rsUn=$?
-	   if [ "$rsUn" = "1" ];then 	     
-	     break; 
-	   fi
        sleep $subCGap
        spent=`expr $k \* $subCGap`
  done
@@ -161,7 +153,7 @@ subFixAll(){
        do
          pubFixLocal
          pubFixRemote
-         sleep $puballwaittime
+         sleep $waitForSession
          msg="=============第${count}次查询订阅消息结果=============="
          realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
          if [ "$realNum" -ge "$subFixCount" ];then
@@ -277,5 +269,3 @@ subCReContinue(){
       stopSpecScript
  fi  
 }
-
-

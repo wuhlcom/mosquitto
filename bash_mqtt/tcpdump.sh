@@ -54,3 +54,6 @@ test -d $capPath||mkdir $capPath
 #tcpdump -i "$interface" tcp port "$tcpPort" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
 tcpdump -i "$interface" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
 }
+
+
+

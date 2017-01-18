@@ -1,8 +1,8 @@
 #!/bin/bash
 #auth:wuhongliang
 #date:2016-12-14
-cuPath=`dirname $0`
-source $cuPath/tcMethods.sh
+currentPath=`dirname $0`
+source $currentPath/tcMethods.sh
 
 case $1 in
    "suball")

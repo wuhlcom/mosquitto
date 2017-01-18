@@ -163,6 +163,7 @@ subC(){
 #一次性订阅同一主题的消息
 subCLoopNoAcc(){
         echoFlag=false
+
         j=0
         relog=${sPath}/${subCRecieved}
         nulog=${sPath}/${subCFName}
@@ -189,6 +190,10 @@ subCLoop(){
 #一次性订阅同一主题的消息用于长期测试
 subCReLoopNoAcc(){
         echoFlag=false
+        #if $capFlag;then
+         # cap "subCReContinue"
+        #fi
+
         j=0
         relog=$sPath/$subCReRecieved
         nulog=${sPath}/${subCReFName}
@@ -361,9 +366,9 @@ stopSub(){
 #先订阅后发布，主题保持不变
 subPubNoAcc(){
 	echoFlag=false
-	if $capFlag;then
-	 cap "subPub"
-	fi
+	#if $capFlag;then
+	# cap "subPub"
+	#fi
  
 	j=0
 	relog=$sPath/${subPubRecieved}
@@ -446,9 +451,9 @@ pubRLoop(){
 #mosquitto_sub retain msg
 subRLoopNoAcc(){
 	echoFlag=false
-	if $capFlag;then
-	 cap "subRLoop"
-	fi
+	#if $capFlag;then
+	# cap "subRLoop"
+	#fi
 
         relog=${subPubRRecieved}
         : > $relog
@@ -483,9 +488,9 @@ subPubRNoAcc(){
   : > $relog
   j=0
  
-  if $capFlag;then
-    cap "subPubR"
-  fi
+  #if $capFlag;then
+   # cap "subPubR"
+  #fi
   
   #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
   for i in `seq $pubRsNum $pubReNum`
