@@ -6,16 +6,17 @@ source $cuPath/centerControl.sh
 #testcase 1
 #订阅指定数量，测试服务端最大支持订阅数
 subAll(){
-        proNum1=0
-        sesNum1=0
-        sumPro1=0
-        sumSes1=0
+      #  proNum1=0
+      #  sesNum1=0
+      #  sumPro1=0
+      #  sumSes1=0
 	subQuRemote
         if $localPcFlag;then
                 subQuLocal
                 expectNum=`expr $expectNum + $subNum`
         fi
         sleep $waitForSession
+        #records用来保存查询到的会话和进程的详细信息
         logDir="${cuPath}/subAllRecords"
         logDirRemote="${remote_dir}/subAllRecords"
         subProcess $logDir subAll
@@ -135,7 +136,7 @@ subCContinue(){
  done
  stopSubRemote
  if $localPcFlag;then
-      stopSub
+      #stopSub
       stopSpecScript
  fi  
 }
@@ -157,31 +158,31 @@ subFixAll(){
         sleep $subFixWait
         queryRemote $subFixSessionLogPath $subFixFName $subFixNum
 
-       while true 
-       do
-         pubFixLocal
-         pubFixRemote
-         sleep $puballwaittime
-         msg="=============第${count}次查询订阅消息结果=============="
-         realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
-         if [ "$realNum" -ge "$subFixCount" ];then
-            break
-         fi
+        while true 
+        do
+          pubFixLocal
+          pubFixRemote
+          sleep $puballwaittime
+          msg="=============第${count}次查询订阅消息结果=============="
+          realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
+          if [ "$realNum" -ge "$subFixCount" ];then
+             break
+          fi
 
-         if [ "$skipTime" = "$subFixQueryTime" ];then
+          if [ "$skipTime" = "$subFixQueryTime" ];then
 		break
-         fi
+          fi
 
-         sleep $subFixGap
-         skipTime=`expr $subFixGap \* $count` 
-	 ((count++))
-      done
+          sleep $subFixGap
+          skipTime=`expr $subFixGap \* $count` 
+	  ((count++))
+        done
 
-      stopSubRemote
-      if $localPcFlag;then
+        stopSubRemote
+        if $localPcFlag;then
           stopSub
           stopSpecScript
-      fi
+        fi
 }
 
 #testcase 5
@@ -278,4 +279,82 @@ subCReContinue(){
  fi  
 }
 
+#testcase 7
+#使用单身证书来认证
+subSi(){
+   echo "1==========================================="
+   logDir="${cuPath}/subSiRecords"
+   logDirRemote="${remote_dir}/subSiRecords"
+   subSiQuRemote
+   if $localPcFlag;then
+	subSiQuLocal
+	expectNum=`expr $expctNum + $subSiNum`
+   fi
+   sleep $waitForSession
 
+   subProcess $logDir subSi
+   subSession $logDir subSi
+
+   for ip in ${ip_array[*]}
+   do
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subSi"   
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subSi"   
+   done
+   sumProAll=`expr $proNum1 + $sumPro1`
+   sumSesAll=`expr $sesNum1 + $sumSes1`
+
+   if [ "$sumProAll" = "$expectNum" ];then
+       	rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
+   else
+       	value=`expr $expectNum - $sumProAll`
+       	rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
+   fi
+   reportLog $reportPath $rs
+
+   if [ "$sumSesAll" = "$expectNum" ];then
+       	rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
+   else
+       	value=`expr $expectNum - $sumSesAll`
+       	rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
+   fi
+   reportLog $reportPath $rs
+   
+   echo "2==========================================="
+   i=1
+   sleepTime=0
+   while [ "$sleepTime" -le "$subSiQueryTime" ]
+   do
+	sleep $subSiGap 
+        ((i++))
+        queryLocal $subSiLogPath $subSiFName $subSiNum
+     	queryRemote $subSiLogPath $subSiFName $subSiNum
+
+	sumProAll=`expr $proNum1 + $sumPro1`
+        sumSesAll=`expr $sesNum1 + $sumSes1`
+   
+        if [ "$sumProAll" = "$expectNum" ];then
+                rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
+        else
+                value=`expr $expectNum - $sumProAll`
+                rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
+        fi
+        reportLog $reportPath $rs
+
+        if [ "$sumSesAll" = "$expectNum" ];then
+                rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
+        else
+                value=`expr $expectNum - $sumSesAll`
+                rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
+        fi
+   	reportLog $reportPath $rs
+        sleepTime=`expr $subSiGap \* $i`
+   done
+ 
+   echo "3==========================================="
+   stopSubRemote
+   if $localPcFlag;then
+       	stopSub
+       	sleep $waitForSession
+       	stopSpecScript
+   fi
+}

@@ -23,6 +23,9 @@ case $1 in
    "subcrecon")
      subCReContinue
      ;;
+   "subsi")
+     subSi
+     ;;
    "all")
      subAll
      sleep $tcGap

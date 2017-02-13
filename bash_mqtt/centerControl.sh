@@ -25,6 +25,7 @@ subCReCMD=subcreloop
 subCReNoAccCMD=subcreloopnoacc
 retainCMD=subpubr
 pubRCMD=pubrloop
+subSiCMD=subsiloop
 stopRetainCMD=stopsubpubr
 sshPort=22
 subRs="0 0"
@@ -311,7 +312,7 @@ stopSubRemote(){
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
  	    #必须加&
-	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"
+	    #ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopScriptCMD}"&
 	done  
 }
@@ -1195,5 +1196,36 @@ querySubCR(){
  expectNum=`expr $expectNum + $reNum`
  msg="总共预期收到保留消息${expectNum},实际收到${sum}"
  reportPubLog $reportPath $msg
+}
+
+#本地单向证书认证并记录结果
+subSiQuLocal(){
+ subSiLogPath=$sPath/subSiSessionLogs/
+ subSiLoop
+ sleep $subSiWait
+ queryLocal $subSiLogPath $subSiFName $subSiNum
+}
+#远程单身证书认证
+subSiRemote(){
+	step=1
+        for ip in ${ip_array[*]}
+        do
+            scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+            if [ "$ip" = "$localPcIP" ];then continue;fi
+            #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
+            newStart=`expr $subSiSNum + $subSiNum \* $step`
+            ssh -p $sshPort $rootusr@$ip "sed -i 's/subSiSNum=${subSiSNum}/subSiSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subSiCMD}"&
+           ((step++))
+        done
+
+}
+#远程订阅并记录结果
+subSiQuRemote(){
+  #与subQuLocal路径保持一致
+  subSiLogPath=$sPath/subSiSessionLogs/
+  subSiRemote
+  sleep $subSiWait
+  queryRemote $subSiLogPath $subSiFName $subSiNum
 }
 

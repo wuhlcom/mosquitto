@@ -8,7 +8,7 @@ accBegin=$1
 accEnd=$2
 clientIDPre=$3
 accFileName=$4
-redisPort=7000
+redisPort=6379
 redisSrvIP=192.168.10.99
 redisSet(){
      redisID=$1
