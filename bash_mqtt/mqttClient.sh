@@ -10,7 +10,7 @@ sPath=`dirname $0`
 source $sPath/mqtt.conf
 source $sPath/tcpdump.sh
 echoFlag=true
-scp ${sPath}/mqtt.conf $rootusr@${srv_ip}:${remote_dir}
+scp ${sPath}/mqtt.conf $rootusr@${redisSrvIP}:${remote_dir}
 #mosquitto_sub
 sub(){
       subtopic=$1
@@ -40,29 +40,29 @@ sub(){
          passwd=$4
          subqos=$5
          msglog=$6
-	 mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath >> $mesglog&
+         mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath >> $msglog&
      elif [ "$subAuType" = "biCa" ];then
          usr=$3
          passwd=$4
          subqos=$5
          msglog=$6
-	 mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath --cert $crtPath --key $keyPath>> $mesglog&
-     else 
+         mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath>> $msglog&
+     else
        if [ -n "$3" ];then
           subqos=$3
           msglog=$4
           if $echoFlag;then
-		 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
-	  fi
+                 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
+          fi
           if [ -z "$msglog" ];then
              mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
-    	  else
+          else
              mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive >> $msglog&
           fi
        else
          if $echoFlag;then
            echo client  \'$subid\' sub topic \'$subtopic\'
-	 fi
+         fi
          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
       fi
      fi
@@ -151,62 +151,88 @@ subLoop(){
  subLoopNoAcc
 }
 
-subSiNoAcc(){
-  if $capFlag;then cap "subSica";fi
+subCaNoAcc(){
+  if [ -z "$1" ];then
+     local autype=$auType
+  else
+     local autype=$1
+  fi
+  if [ -z "$2" ];then
+  	local qos=0
+  else
+  	local qos=$2
+  fi
+  if $capFlag;then cap "subCa";fi
   #relog收到消息保存到日志
-  relog=${sPath}/${subSiRecieved}
-  nulog=${sPath}/${subSiFName}
+  relog=${sPath}/${subCaRecieved}
+  nulog=${sPath}/${subCaFName}
   : > $nulog
   : > $relog
-  auType="siCa"
-  for i in `seq $subSiSNum $subSiENum`
+  for i in `seq $subCaSNum $subCaENum`
   do
-      subSiTopic="${subSiTopicPre}${i}"
-      subSiID="${subSiIDPre}${i}"
-      sub $subSiTopic $subSiID $defaultUsr $defaultPasswd $qos $relog $auType 
+      subCaTopic="${subCaTopicPre}${i}"
+      subCaID="${subCaIDPre}${i}"
+      sub $subCaTopic $subCaID $defaultUsr $defaultPasswd $qos $relog $autype 
   done
-  echo `expr $i - $subSiSNum + 1` > $nulog	
+  echo `expr $i - $subCaSNum + 1` > $nulog	
 }
 
-subSiLoop(){
-  createAccount $subSiIDPre $subSiSNum $subSiENum "${intf}-${cIP}-subSi" 
-  subSiNoAcc 
+subCaLoop(){
+  if [ -z "$1" ];then
+     local autype=$auType
+  else
+     local autype=$1
+  fi
+  if [ -z "$2" ];then
+  	local qos=0
+  else
+  	local qos=$2
+  fi
+  if $capFlag;then cap "subCa";fi
+  createAccount $subCaIDPre $subCaSNum $subCaENum "${intf}-${cIP}-subCa" 
+  subCaNoAcc $autype $qos 
 }
 
 #一次性订阅
 subC(){
        subtopic=$1
        subid=$2
-      if [ -z "$3" ] || [ -z "$4" ] ;then
+       if [ -z "$3" ] || [ -z "$4" ] ;then
             echo "ERROR:Please input the mosquitto client usrname and password!"
-      fi
+       fi
       
        usr=$3
        passwd=$4
        subqos=$5
        relog=$6
-      if [ -z "$7" ];then
+       if [ -z "$7" ];then
         Ccount=$subCcount
-      else
+       else
         Ccount=$7
-      fi
+       fi
+       
+       if [ -z "$8" ];then
+         subAuType="pw"
+       else
+         subAuType=$8
+       fi
 
-      if $echoFlag;then
+       if $echoFlag;then
             echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
-      fi
+       fi
       
-      if [ "$mqttAuth" = "singleCa" ];then
+       if [ "$subAuType" = "siCa" ];then
          if [ -z "$relog" ];then
-		mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath -C $Ccount&
+		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath -C $Ccount&
  	 else
-		mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath -C $Ccount >> $relog&
+		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath -C $Ccount >> $relog&
 	 fi
-      elif [ "$mqttAuth" = "biCa" ];then
+       elif [ "$subAuType" = "biCa" ];then
          if [ -z "$relog" ];then
-		mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath --cert $crtPath --key $keyPath -C $Ccount&
-	else
-		mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive -u $usr  -P $passwd --cafile $carPath --cert $crtPath --key $keyPath -C $Ccount >> $relog&
-	fi
+		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath -C $Ccount&
+         else
+		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath -C $Ccount >> $relog&
+         fi
       else
          if [ -z "$relog" ];then
          	mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
@@ -266,7 +292,6 @@ subCReLoopNoAcc(){
                 :>$nulog
                 echo `expr $i - $subCResNum + 1` >> $nulog
         done
-
 }
 
 subCReLoop(){
@@ -281,6 +306,7 @@ subCRNoAcc(){
         relog=${sPath}/${subCPubRRecieved}
         nulog=${sPath}/${subRFName}
         : > $relog
+        : > $nulog
         for i in `seq $pubRsNum $pubReNum`
         do
                 subRID="$subRIDPre$i"
@@ -290,36 +316,84 @@ subCRNoAcc(){
                 if [ $j -ge 3 ]; then
                        j=0
                 fi
-                : > $nulog
-                echo `expr $i - $pubRsNum + 1` >> $nulog
+                echo `expr $i - $pubRsNum + 1` > $nulog
         done
-
 }
+
 #订阅的主题，起始和结束序列与pubRLoop()保持一致
 subCRLoop(){
    createAccount $subRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-subCRLoop"  
    subCRNoAcc
 }
+
+#证书认证方式订阅
+subCCaNoAcc(){
+	echoFlag=false
+        local subSNum=$1
+        local subENum=$2
+        j=0
+        local relog=${sPath}/${subCCaRecieved}
+        local nulog=${sPath}/${subCCaFName}
+        : > $relog
+        : > $nulog
+        for i in `seq $subSNum $subENum`
+        do
+	        subCCaID="$subCCaIDPre$i"
+                subCCaTopic="$subCCaTopicPre$i"
+                subC $subCCaTopic $subCCaID $defaultUsr $defaultPasswd $subCCaQos $relog 1 $auType
+		echo `expr $i - $subSNum + 1` > $nulog
+        done
+}
+
+#证书认证方式订阅
+subCCa(){
+   createAccount $subCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-subCCa"  
+   subCCaNoAcc $subCCaSNum $subCCaENum 
+}
+
+#证书认证方式发布
+pubCCaNoAcc(){
+        local nulog=${sPath}/${pubCCaFName}
+        local pubSNum=$1
+        local pubENum=$2
+	: > $nulog
+        for i in `seq $pubSNum $pubENum`
+ 	do
+             pubCCaID="$pubCCaIDPre$i"
+             subCCaTopic="$subCCaTopicPre$i"
+             pubCCaMsg="$pubCCaMsgPre$i" 
+	     pub $subCCaTopic $pubCCaMsg $pubCCaID $pubCCaQos $defaultUsr $defaultPasswd $auType
+	     echo `expr $i - $pubSNum + 1` > $nulog
+	done
+}
+
+#证书认证方式发布,起始序号与subCCa中的保持一致
+pubCCa(){
+   createAccount $pubCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-pubCCa"  
+   pubCCaNoAcc $subCCaSNum $subCCaENum
+}
+
 #mqtt pub
 pub(){
-        pubtopic=$1
-        pubmsg=$2
-	pubid=$3
-        pubqos=$4
-        usr=$5
-	passwd=$6
-        if [ "$mqttAuth" = "pw" ] ;then
-                 if [ -z "$3" ] || [ -z "$4" ] ;then
-              		echo "ERROR:Please input the mosquitto client usrname and password!"
-	         fi
-		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
-        elif [ "$mqttAuth" = "singleCa" ] ;then
-		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd --carfile $carPath&
-        elif [ "$mqttAuth" = "biCa" ] ;then
-		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd --carfile $carPath&
+        local pubtopic=$1
+        local pubmsg=$2
+	local pubid=$3
+        local pubqos=$4
+        local usr=$5
+	local passwd=$6
+        local pubAuType=$7
+        if [ -z "$7" ];then pubAuType="pw"; fi
+        if [ "$pubAuType" = "pw" ] ;then
+             if [ -z "$3" ] || [ -z "$4" ] ;then
+       		echo "ERROR:Please input the mosquitto client usrname and password!"
+             fi
+             mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
+        elif [ "$pubAuType" = "siCa" ] ;then
+             mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $caPort -i $pubid -q $pubqos -u $usr -P $passwd --cafile $caPath&
+        elif [ "$pubAuType" = "biCa" ] ;then
+	     mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $caPort -i $pubid -q $pubqos -u $usr -P $passwd --cafile $caPath --cert $crtPath --key $keyPath&
         else
-		if [ -n "$4" ];then
-        		pubqos=$4
+        	if [ -n "$4" ];then
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos&
 		else
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid&
@@ -609,6 +683,36 @@ stopSubPubR(){
  stopPubR
 }
 
+###un finished
+subMuTopic(){
+ local relog=${sPath}/$subMuTopicRecieved
+ local nulog=${sPath}/$subMuTopicNum
+ local count=0 
+ : > $relog
+ : > $nulog
+ for i in `seq $subMuTopicSNum $subMuTopicENum`
+ do
+    subMuClientSNum=`expr $subMuTopicSNum  \*  $i`
+    subMuClientENum=`expr subMuClientSNum + $subMuClientNum -1`
+    local subTopic="${subMuTopicPre}${i}"
+    local subID="${subMuTopicSubIDPre}${i}"
+    local qos=0
+    for j in `seq $subMuClientSNum $subMuClientENum`
+    do
+      sub $subTopic $subID $defaultUsr $defaultPasswd $qos $relog $auType
+      ((count++))
+      echo $count > $nulog
+    done
+ done
+}
+
+#订阅单个主题，发送大量消息
+subCaTopic(){
+    if $subCaATopicCap;then cap "subCaATopic";fi
+    createAccount $subCaATopicID 1 0 "${intf}-${cIP}-subATopic" 
+    : > $subCaATopicRecieved 
+    sub $subCaATopic $subCaATopicID $defaultUsr $defaultPasswd $subCaATopicQos $subCaATopicRecieved $auType
+}
 case $1 in
    "subloop")
      subLoop
@@ -664,8 +768,17 @@ case $1 in
    "pubc")
      pubC
      ;;
-   "subsiloop")
-     subSiLoop
+   "subcaloop")
+     subCaLoop
+     ;;
+   "subcatopic")
+     subCaTopic
+     ;;
+   "subcca")
+     subCCa
+     ;;
+   "pubcca")
+     pubCCa
      ;;
    *)
      #echo "mqttClient.sh"

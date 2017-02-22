@@ -7,6 +7,8 @@
 
 
 fun(){
+ a=$1
+ b=$2
 x=6666
 echo "I am here"
 echo "He is here"

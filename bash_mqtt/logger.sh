@@ -40,8 +40,19 @@ swapinfo() {
 
 #查询sub会话和进程，返回日志描述
 mqttinfo(){
+  if [ -z "$1" ];then
+ 	 local srvIP=$srv_ip;
+  else
+	 local srvIP=$1
+  fi
+  if [ -z "$2" ];then 
+	local srvPort=$srv_port;
+  else
+	local srvPort=$2
+  fi
+  local ipPort="${srvIP}:${srvPort}"
   process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
-  session_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
+  session_num=`netstat -apnt |grep $ipPort|grep ESTABLISHED|wc -l`
   process_num=`expr $process_num - 1`
   mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
@@ -49,10 +60,20 @@ mqttinfo(){
 
 #查询sub会话和进程，只返回数量
 subResult(){
-  ip_port="${srv_ip}:${srv_port}"
+  if [ -z "$1" ];then
+ 	 local srvIP=$srv_ip;
+  else
+	 local srvIP=$1
+  fi
+  if [ -z "$2" ];then 
+	local srvPort=$srv_port;
+  else
+	local srvPort=$2
+  fi
+  local ipPort="${srvIP}:${srvPort}"
   #session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
-  session_num=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED|wc -l`
-  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
+  local  session_num=`netstat -apnt |grep "${ipPort}"|grep ESTABLISHED|wc -l`
+  local  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
   process_num=`expr $process_num - 1`
   echo ${process_num}
   echo ${session_num}
@@ -116,7 +137,7 @@ createPath(){
   else
         logsPath=$1
   fi
-  test -d $logsPath||mkdir $logsPath
+  test -d $logsPath||mkdir -p $logsPath
 }
 
 #查询sub会话和进程，并将结果保存到文件中
@@ -134,10 +155,20 @@ subSession(){
   path=$1
   createPath $path
   fileName=$2
+  if [ -z "$3" ];then 
+	local srvIP=$srv_ip;
+  else
+	local srvIP=$3
+  fi
+  if [ -z "$4" ];then 
+	local srvPort=$srv_port;
+  else
+	local srvPort=$4
+  fi
+  local ipPort="${srvIP}:${srvPort}"
   sessionFile="${path}/${fileName}_sessions.log"
   :>$sessionFile
-  ip_port="${srv_ip}:${srv_port}"
-  netstat -apnt |grep "$ip_port"|grep ESTABLISHED >> $sessionFile
+  netstat -apnt |grep "$ipPort"|grep ESTABLISHED >> $sessionFile
 }
 
 #获取最新的文件名
@@ -299,7 +330,7 @@ case $1 in
      sMonitorLog
      ;;
  "subresult")
-     subResult
+     subResult $2 $3
      ;;
  "srvresult")
      srvResult
@@ -308,7 +339,7 @@ case $1 in
      subProcess $2 $3
      ;;
  "subsession")
-     subSession $2 $3
+     subSession $2 $3 $4 $5
      ;;
  "test")
      writeLog $2

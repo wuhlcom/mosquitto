@@ -25,18 +25,20 @@ subCReCMD=subcreloop
 subCReNoAccCMD=subcreloopnoacc
 retainCMD=subpubr
 pubRCMD=pubrloop
-subSiCMD=subsiloop
+subCaCMD=subcaloop
 stopRetainCMD=stopsubpubr
+subCCaCMD=subcca
+pubCCaCMD=pubcca
 sshPort=22
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
 waitForSession=5
 puballwaittime=30
 
-localPcFlag=true
+#localPcFlag=true
 #localPcFlag=false
-localIntf=eth0
-localPcIP=`ip a|grep "inet\s*192.168.10.*$localIntf"|awk -F " " '{print $2}'|sed 's/\/24//g'`
+#localIntf=eth0
+#localPcIP=`ip a|grep "inet\s*192.168.10.*$localIntf"|awk -F " " '{print $2}'|sed 's/\/24//g'`
 local_query=$sPath/logger.sh
 
 #记录进程和会话结果
@@ -102,9 +104,21 @@ queryLocal(){
    reportPath=$1
    fileName=$2
    exprNum=$3
+
+   if [ -z "$4" ];then 
+	local srvIP=$srv_ip;
+   else
+	local srvIP=$4
+   fi
+
+   if [ -z "$5" ];then
+	 local srvPort=$srv_port;
+   else
+	 local srvPort=$5
+   fi
+
    proNum1=0
    sesNum1=0
-   #reportPath=$sPath/subLogs/
    sleep $querySubGap
    i=0
    while true
@@ -112,13 +126,13 @@ queryLocal(){
      subRsNum=`cat "${sPath}/${fileName}"`
      #订阅完成则查询订阅结果
      if [ "$subRsNum" = "$exprNum" ];then
-       subRs=$(${local_query} ${subRsCMD})
+       subRs=$(${local_query} ${subRsCMD} $srvIP $srvPort)
        break
      fi
      ((i++))
-     #订阅超时后也要订阅结果
+     #订阅超时后也要查询订阅结果
      if [ "$i" = "$querySubCount" ];then
-        subRs=$(${local_query} ${subRsCMD})
+        subRs=$(${local_query} ${subRsCMD} $srvIP $srvPort)
 	break
      fi
      sleep $querySubGap
@@ -159,11 +173,24 @@ queryRemote(){
  reportPath=$1
  fileName=$2
  exprNum=$3
+   if [ -z "$4" ];then 
+	local srvIP=$srv_ip;
+   else
+	local srvIP=$4
+   fi
+
+   if [ -z "$5" ];then
+	 local srvPort=$srv_port;
+   else
+	 local srvPort=$5
+   fi
  i=0
  expectNum=0
  sumPro1=0
  sumSes1=0
  #reportPath=$sPath/subLogs/
+ len=${#ip_array[@]}
+ if [ "$len" = 0 ];then return;fi
  sleep $querySubGap
  for ip in ${ip_array[*]}
   do
@@ -175,13 +202,13 @@ queryRemote(){
       #pcSubNum=`echo $subResult|awk -F " " '{print $3}'`
       #订阅完成则查询订阅结果
       if [ "$subRsNum" = "$exprNum" ];then
-         subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+         subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD} ${srvIP} ${srvPort}")
          break
       fi
       ((i++))
       #订阅超时后也要订阅结果
       if [ "$i" = "$querySubCount" ];then
-        subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
+        subRs=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD} ${srvIP} $srvPort")
 	break
       fi
       sleep $querySubGap
@@ -1036,6 +1063,7 @@ queryMsgNum(){
              sum=`expr $sum + $subMsgRs`
              num=`expr $num + 1`
         done
+        # 计算
         expectNum=`expr $num \* $msgNum`
         message="预期订阅和发布交互数为${expectNum}查询到当前订阅到的消息总数为$sum"
         reportLog $reportPath $message
@@ -1199,33 +1227,111 @@ querySubCR(){
 }
 
 #本地单向证书认证并记录结果
-subSiQuLocal(){
- subSiLogPath=$sPath/subSiSessionLogs/
- subSiLoop
- sleep $subSiWait
- queryLocal $subSiLogPath $subSiFName $subSiNum
+subCaQuLocal(){
+ subCaLogPath=$sPath/subCaSessionLogs/
+ subCaLoop
+ sleep $subCaWait
+ queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 }
 #远程单身证书认证
-subSiRemote(){
+subCaRemote(){
 	step=1
         for ip in ${ip_array[*]}
         do
             scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
             if [ "$ip" = "$localPcIP" ];then continue;fi
             #修改配置文件中的值,保证每台机器上的mosquitto_sub的id是唯一的 
-            newStart=`expr $subSiSNum + $subSiNum \* $step`
-            ssh -p $sshPort $rootusr@$ip "sed -i 's/subSiSNum=${subSiSNum}/subSiSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subSiCMD}"&
+            newStart=`expr $subCaSNum + $subCaNum \* $step`
+            ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaSNum=${subCaSNum}/subCaSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+            ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subCaCMD}"&
            ((step++))
         done
 
 }
 #远程订阅并记录结果
-subSiQuRemote(){
+subCaQuRemote(){
   #与subQuLocal路径保持一致
-  subSiLogPath=$sPath/subSiSessionLogs/
-  subSiRemote
-  sleep $subSiWait
-  queryRemote $subSiLogPath $subSiFName $subSiNum
+  subCaLogPath=$sPath/subCaSessionLogs/
+  subCaRemote
+  sleep $subCaWait
+  queryRemote $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 }
 
+#查询收到消息数量并写放日志
+queryMsg(){
+    local i=0
+    local reportPath=$1
+    #预期消息数
+    local pubNum=$2
+    #计数文件
+    local numFile=$3
+    #消息文件
+    local msgFile=$4
+    local pcIP=$5
+    #收到消息数量
+    local msgNum=0
+    while true
+    do
+       #记录下发消息数
+       local pubCountNum=`cat "$numFile"`
+       if [ "$pubCountNum" = "$pubNum" ];then
+            #实际收到消息数
+	    msgNum=`cat ${msgFile}|wc -l`
+            if [ "$msgNum" -lt "$pubNum" ];then
+               local value=`expr $pubNum - $msgNum`
+               local  msg="失败:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,相差${value}条"
+            elif [ "$msgNum" = "$pubNum" ];then
+               local  msg="成功:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条"
+            elif [ "$msgNum" -gt "$pubNum" ];then
+               local value=`expr $msgNum - $pubNum`
+               local  msg="异常:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,多收到${value}条"
+            fi
+            reportLog $reportPath $msg
+            break
+       fi
+ 
+      ((i++))
+      #循环查询达到限定次数跳出循环，但仍查询一次
+      if [ "$i" = 5 ];then
+         #实际收到消息数
+	 msgNum=`cat ${msgFile}|wc -l`
+         if [ "$msgNum" -lt "$pubNum" ];then
+              local value=`expr $pubNum - $msgNum`
+              local  msg="失败:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,相差${value}条"
+         elif [ "$msgNum" = "$pubNum" ];then
+             local  msg="成功:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条"
+         elif [ "$msgNum" -gt "$pubNum" ];then
+             local value=`expr $msgNum - $pubNum`
+             local  msg="异常:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,多收到${value}条"
+         fi
+         reportLog $reportPath $msg
+         break;
+      fi
+      sleep $waitForSession
+      
+   done
+}
+
+#远程机器执行订阅
+subCCaRemote(){
+  local step=1
+  local snum=$1
+  local subnum=$2
+  for ip in ${ip_array[*]}
+  do 
+	scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+	if [ "$ip" = "${localPcIP}" ];then continue;fi
+	local newStart=`expr $snum + $subnum \* $step`
+	ssh -p $sshPort $rootusr@$ip "sed -i 's/subCCaSNum=${snum}/subCCaSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCCaCMD"&
+	((step++))
+  done  
+}
+
+#远程发布,这里不需要改配置pub的起始序号，因为这里使用subcca中的序号
+pubCCaRemote(){
+  for ip in ${ip_array[*]}
+  do
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCCaCMD"&
+  done 
+}

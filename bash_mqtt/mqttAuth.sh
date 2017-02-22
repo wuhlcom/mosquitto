@@ -5,11 +5,12 @@
 sPath=`dirname $0`
 source $sPath/mqtt.conf
 accBegin=$1
+#当accEnd为0时只创建一个redis账户
 accEnd=$2
 clientIDPre=$3
 accFileName=$4
-redisPort=6379
-redisSrvIP=192.168.10.99
+#redisPort=6379
+#redisSrvIP=192.168.10.99
 redisSet(){
      redisID=$1
      #中括号中判断变量一定要加引号
@@ -39,6 +40,7 @@ redisAcc(){
   accLog=${accFile}.log
   :>$accFile
   :>$accLog
+  #当accEnd为0时只创建一个redis账户
   if [ "$accEnd" = 0 ];then
             echo `redisSet $clientIDPre`>>$accFile
   else

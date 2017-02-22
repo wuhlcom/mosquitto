@@ -23,8 +23,14 @@ case $1 in
    "subcrecon")
      subCReContinue
      ;;
-   "subsi")
-     subSi
+   "subca")
+     subCa
+     ;;
+   "subpubcca")
+     subPubCCa
+     ;;
+   "subcaatopic")
+     subCaATopic
      ;;
    "all")
      subAll

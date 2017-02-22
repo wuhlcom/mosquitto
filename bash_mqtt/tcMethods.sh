@@ -281,76 +281,78 @@ subCReContinue(){
 
 #testcase 7
 #使用单身证书来认证
-subSi(){
-   echo "1==========================================="
-   logDir="${cuPath}/subSiRecords"
-   logDirRemote="${remote_dir}/subSiRecords"
-   subSiQuRemote
+subCa(){
+   logDir="${cuPath}/subCaRecords"
+   logDirRemote="${remote_dir}/subCaRecords"
+   local expTotalNum=0
+   subCaQuRemote
    if $localPcFlag;then
-	subSiQuLocal
-	expectNum=`expr $expctNum + $subSiNum`
+	subCaQuLocal
+	echo "1---------------------------"
+   	echo $expectNum
+	expTotalNum=`expr $expectNum + $subCaNum`
    fi
    sleep $waitForSession
-
-   subProcess $logDir subSi
-   subSession $logDir subSi
+   echo "2---------------------------"
+   echo $expTotalNum
+   subProcess $logDir subCa
+   subSession $logDir subCa $srv_ip $caPort
 
    for ip in ${ip_array[*]}
    do
-		ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subSi"   
-		ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subSi"   
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subCa"   
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subCa $srv_ip $caPort"   
    done
    sumProAll=`expr $proNum1 + $sumPro1`
    sumSesAll=`expr $sesNum1 + $sumSes1`
 
-   if [ "$sumProAll" = "$expectNum" ];then
-       	rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
+   if [ "$sumProAll" = "$expTotalNum" ];then
+       	rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
    else
-       	value=`expr $expectNum - $sumProAll`
-       	rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
+       	value=`expr $expTotalNum - $sumProAll`
+       	rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
    fi
    reportLog $reportPath $rs
 
    if [ "$sumSesAll" = "$expectNum" ];then
-       	rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
+       	rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
    else
-       	value=`expr $expectNum - $sumSesAll`
-       	rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
+       	value=`expr $expTotalNum - $sumSesAll`
+       	rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
    fi
    reportLog $reportPath $rs
    
-   echo "2==========================================="
-   i=1
-   sleepTime=0
-   while [ "$sleepTime" -le "$subSiQueryTime" ]
+   local x=1
+   local sleepTimes=0
+   while [ "$sleepTimes" -le "$subCaQueryTime" ]
    do
-	sleep $subSiGap 
-        ((i++))
-        queryLocal $subSiLogPath $subSiFName $subSiNum
-     	queryRemote $subSiLogPath $subSiFName $subSiNum
+	sleep $subCaGap 
+        ((x++))
+        local msg="============================================================="
+        reportLog $reportPath $msg
+        sleepTimes=`expr $subCaGap \* $x`
+        queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
+     	queryRemote $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 
 	sumProAll=`expr $proNum1 + $sumPro1`
         sumSesAll=`expr $sesNum1 + $sumSes1`
-   
-        if [ "$sumProAll" = "$expectNum" ];then
-                rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
+        if [ "$sumProAll" = "$expTotalNum" ];then
+                rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
         else
-                value=`expr $expectNum - $sumProAll`
-                rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
+                value=`expr $expTotalNum - $sumProAll`
+                rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
         fi
         reportLog $reportPath $rs
 
-        if [ "$sumSesAll" = "$expectNum" ];then
-                rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
+        if [ "$sumSesAll" = "$expTotalNum" ];then
+                rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
         else
-                value=`expr $expectNum - $sumSesAll`
-                rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
+                value=`expr $expTotalNum - $sumSesAll`
+                rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
         fi
    	reportLog $reportPath $rs
-        sleepTime=`expr $subSiGap \* $i`
    done
  
-   echo "3==========================================="
    stopSubRemote
    if $localPcFlag;then
        	stopSub
@@ -358,3 +360,67 @@ subSi(){
        	stopSpecScript
    fi
 }
+
+#订阅单个主题，推送大量消息
+subCaATopic(){
+  local subCaLogPath=$sPath/subCaATopicMsgLogs/
+  nulog=${sPath}/${pubCaATopicFName}
+  : > $nulog
+  subCaTopic
+  createAccount $pubCaATopicIDPre  $pubCaATopicSNum $pubCaATopicENum "${intf}-${cIP}-pubCaATopic"
+  for i in `seq $pubCaATopicSNum $pubCaATopicENum`
+  do
+      local pubAMsg=${pubCaATopicMsgPre}${i}
+      local pubAID=${pubCaATopicIDPre}${i}
+      pub $subCaATopic $pubAMsg $pubAID $pubCaATopicQos $defaultUsr $defaultPasswd $auType
+      #发布消息过快，服务端处理不过来
+      sleep 0.3
+      local count=`expr $i - $pubCaATopicSNum + 1`
+      echo  $count > $nulog
+      if [ `expr $count % $pubCaQueryNum` = 0 ];then
+        sleep $pubCaQueryWait
+        queryMsg $subCaLogPath $count $pubCaATopicFName $subCaATopicRecieved $localPcIP
+      fi
+  done
+  stopSub
+  sleep $waitForSession
+  stopSpecScript
+}
+
+#不同客户端订阅不同主题并发布不同主题的消息
+subPubCCa(){
+  subCCaSessionLog=$sPath/subCCaSessionLogs/
+  subCCaMsgLog=$sPath/subCCaMsgLogs/
+  local p=1
+  while [ "$p" -le "1" ]
+  do
+    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
+    	subCCaRemote $subCCaSNum $subCCaNum
+    fi
+    subCCa
+    sleep $subCCaWait
+
+    length=${#ip_array[*]}
+    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
+	queryRemote $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
+    fi
+    queryLocal $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
+
+    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
+       pubCCaRemote
+    fi
+    pubCCa
+    sleep $pubCCaWait
+
+    msg="第${i}次查询收到消息情况"
+    queryMsgNum $subCCaMsgLog $msg $subCCaRecieved $subCCaNum                 
+    ((p++))
+ done
+ if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
+ 	stopSubRemote
+ fi
+ stopSub
+ sleep $waitForSession
+ stopSpecScript
+}
+
