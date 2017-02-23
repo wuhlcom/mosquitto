@@ -8,8 +8,8 @@ source $cuPath/centerControl.sh
 subAll(){
       #  proNum1=0
       #  sesNum1=0
-      #  sumPro1=0
-      #  sumSes1=0
+        sumPro1=0
+        sumSes1=0
 	subQuRemote
         if $localPcFlag;then
                 subQuLocal
@@ -282,19 +282,17 @@ subCReContinue(){
 #testcase 7
 #使用单身证书来认证
 subCa(){
+   sumPro1=0
+   subSes1=0
    logDir="${cuPath}/subCaRecords"
    logDirRemote="${remote_dir}/subCaRecords"
    local expTotalNum=0
    subCaQuRemote
    if $localPcFlag;then
 	subCaQuLocal
-	echo "1---------------------------"
-   	echo $expectNum
 	expTotalNum=`expr $expectNum + $subCaNum`
    fi
    sleep $waitForSession
-   echo "2---------------------------"
-   echo $expTotalNum
    subProcess $logDir subCa
    subSession $logDir subCa $srv_ip $caPort
 
@@ -360,7 +358,7 @@ subCa(){
        	stopSpecScript
    fi
 }
-
+#testcase 11
 #订阅单个主题，推送大量消息
 subCaATopic(){
   local subCaLogPath=$sPath/subCaATopicMsgLogs/
@@ -387,40 +385,188 @@ subCaATopic(){
   stopSpecScript
 }
 
+#testcase 9
 #不同客户端订阅不同主题并发布不同主题的消息
 subPubCCa(){
   subCCaSessionLog=$sPath/subCCaSessionLogs/
   subCCaMsgLog=$sPath/subCCaMsgLogs/
   local p=1
-  while [ "$p" -le "1" ]
+  local length=0
+  local expTotalNum=$subCCaNum
+  sumPro1=0
+  sumSes1=0
+  if [ -n "$ip_array" ];then
+     length=${#ip_array[*]}
+  fi
+
+  if [ "$length" -ne "0" ];then
+      subCCaRemote $subCCaSNum $subCCaNum
+      expTotalNum=`expr \( $length + 1 \) \*  $subCCaNum`
+  fi
+  subCCa
+  sleep $subCCaWait
+
+  if [ "$length" -ne "0" ];then
+     queryRemote $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
+  fi
+  queryLocal $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
+
+  ##########################################
+  local sumProAll=`expr $proNum1 + $sumPro1`
+  local sumSesAll=`expr $sesNum1 + $sumSes1`
+  local submsg="=========第${p}次查询订阅情况======="
+  reportLog $subCCaSessionLog $submsg
+  if [ "$sumProAll" = "$expTotalNum" ];then
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
+  else
+      value=`expr $expTotalNum - $sumProAll`
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
+  fi
+  reportLog $subCCaSessionLog $rs
+
+  if [ "$sumSesAll" = "$expTotalNum" ];then
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
+  else
+     value=`expr $expTotalNum - $sumSesAll`
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
+  fi
+  reportLog $subCCaSessionLog $rs
+  ##########################################
+
+  if [ "$length" -ne "0" ];then
+     pubCCaRemote
+  fi
+  pubCCa
+  sleep $pubCCaWait
+
+  local msg="=========第${p}次查询收到消息情况======="
+  queryMsgNum $subCCaMsgLog $msg $subCCaRecieved $subCCaNum
+  p=`expr $p + 1` 
+  while [ "$p" -le "$subPubCCaTimes" ]
   do
-    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
-    	subCCaRemote $subCCaSNum $subCCaNum
+    if [ "$length" -ne "0" ];then
+       subCCaNoAccRemote
     fi
-    subCCa
+    subCCaNoAcc
     sleep $subCCaWait
 
-    length=${#ip_array[*]}
-    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
-	queryRemote $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
+    if [ "$length" -ne "0" ];then
+        queryRemote $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
     fi
     queryLocal $subCCaSessionLog $subCCaFName $subCCaNum $srv_ip $caPort
 
-    if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
-       pubCCaRemote
+  ##########################################
+  sumProAll=`expr $proNum1 + $sumPro1`
+  sumSesAll=`expr $sesNum1 + $sumSes1`
+  local submsg="=========第${p}次查询订阅情况======="
+  reportLog $subCCaSessionLog $submsg
+  if [ "$sumProAll" = "$expTotalNum" ];then
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
+  else
+      value=`expr $expTotalNum - $sumProAll`
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
+  fi
+  reportLog $subCCaSessionLog $rs
+
+  if [ "$sumSesAll" = "$expTotalNum" ];then
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
+  else
+     value=`expr $expTotalNum - $sumSesAll`
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
+  fi
+  reportLog $subCCaSessionLog $rs
+  ##########################################
+
+    if [ "$length" -ne "0" ];then
+       pubCCaNoAccRemote
     fi
-    pubCCa
+    pubCCaNoAcc
     sleep $pubCCaWait
 
-    msg="第${i}次查询收到消息情况"
-    queryMsgNum $subCCaMsgLog $msg $subCCaRecieved $subCCaNum                 
+    msg="=========第${p}次查询收到消息情况======="
+    queryMsgNum $subCCaMsgLog $msg $subCCaRecieved $subCCaNum
     ((p++))
- done
- if [ "$length" -ne "0" ]||[ -z "$ip_array" ];then
+  done 
+  if [ "$length" -ne "0" ];then
  	stopSubRemote
- fi
- stopSub
- sleep $waitForSession
- stopSpecScript
+  fi
+  stopSub
+  sleep $waitForSession
+  stopSpecScript
 }
 
+#testcase 10
+subPubCaCon(){
+  subCaConSessionLog=$sPath/subCaConSessionLogs/
+  subCaConMsgLog=$sPath/subCaConMsgLogs/
+  local p=1
+  local length=0
+  local expTotalNum=$subCaConNum
+  sumPro1=0
+  sumSes1=0
+  if [ -n "$ip_array" ];then
+     length=${#ip_array[*]}
+  fi
+
+  if [ "$length" -ne "0" ];then
+      subCaConRemote $subCaConSNum $subCaConNum
+      expTotalNum=`expr \( $length + 1 \) \*  $subCaConNum`
+  fi
+  subCaCon
+  sleep $subCaConWait
+
+  if [ "$length" -ne "0" ];then
+     queryRemote $subCaConSessionLog $subCaConFName $subCaConNum $srv_ip $caPort
+  fi
+  queryLocal $subCaConSessionLog $subCaConFName $subCaConNum $srv_ip $caPort
+ 
+  ##########################################
+  local sumProAll=`expr $proNum1 + $sumPro1`
+  local sumSesAll=`expr $sesNum1 + $sumSes1`
+  if [ "$sumProAll" = "$expTotalNum" ];then
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
+  else
+      value=`expr $expTotalNum - $sumProAll`
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
+  fi
+  reportLog $subCaConSessionLog $rs
+
+  if [ "$sumSesAll" = "$expTotalNum" ];then
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
+  else
+     value=`expr $expTotalNum - $sumSesAll`
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
+  fi
+  reportLog $subCaConSessionLog $rs
+  ############################################
+  #创建远程发布消息的客户端账户
+  if [ "$length" -ne "0" ];then
+	pubCaConAccRemote
+  fi
+  #为本机上的客户端创建账户
+  pubCaConAcc
+  ###开始循环发布消息 
+  while [ "$p" -le "$subPubCaConTimes" ]
+  do
+    if [ "$length" -ne "0" ];then
+       pubCaConNoAccRemote
+    fi
+    pubCaConNoAcc
+    sleep $pubCaConWait
+
+    msg="=========第${p}次查询收到消息情况======="
+    queryMsgNum $subCaConMsgLog $msg $subCaConRecieved $subCaConNum
+    ((p++))
+    : > $sPath/$subCaConRecieved
+    if [ "$length" -ne "0" ];then
+       ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaConRecieved}"
+    fi
+  done
+
+  if [ "$length" -ne "0" ];then
+        stopSubRemote
+  fi
+  stopSub
+  sleep $waitForSession
+  stopSpecScript
+}

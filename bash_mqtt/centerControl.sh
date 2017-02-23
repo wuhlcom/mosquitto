@@ -25,10 +25,15 @@ subCReCMD=subcreloop
 subCReNoAccCMD=subcreloopnoacc
 retainCMD=subpubr
 pubRCMD=pubrloop
-subCaCMD=subcaloop
+subCaCMD=subca
 stopRetainCMD=stopsubpubr
 subCCaCMD=subcca
+subCCaNoAccCMD=subccanoacc
 pubCCaCMD=pubcca
+pubCCaNoAccCMD=pubccanoacc
+pubCaConAccCMD=pubcaconacc
+pubCaConNoAccCMD=pubcaconnoacc
+subCaConCMD=subcacon
 sshPort=22
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
@@ -339,7 +344,7 @@ stopSubRemote(){
 	    #if IP is same as local ip,continue
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
  	    #必须加&
-	    #ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"
+	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopCMD}"
 	    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} ${subStopScriptCMD}"&
 	done  
 }
@@ -1044,12 +1049,11 @@ queryMsgNum(){
 	num=0
         sum=0
         expectNum=0
-        subMsgRs=""
+        local subMsgRs=""
         reportLog $reportPath $msg 
-           
         if $localPcFlag;then 
             subMsgRs=`cat ${sPath}/${fileName}|wc -l`
-            message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
+            local message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
             reportLog $reportPath $message
             sum=`expr $sum + $subMsgRs`
 	    num=1
@@ -1058,14 +1062,22 @@ queryMsgNum(){
         for ip in ${ip_array[*]}
         do
 	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
-             message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
+             local message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
              reportLog $reportPath $message 
              sum=`expr $sum + $subMsgRs`
              num=`expr $num + 1`
         done
-        # 计算
+        # 计算预期消息总数
         expectNum=`expr $num \* $msgNum`
-        message="预期订阅和发布交互数为${expectNum}查询到当前订阅到的消息总数为$sum"
+        if [ "$expectNum" = "$sum" ];then
+	        message="预期订阅和发布交互数为${expectNum},实际收到的消息总数为$sum"
+        elif [ "$expectNum" -lt "$sum" ];then
+		value=`expr $sum - $expectNum`
+	        message="异常:预期订阅和发布交互数为${expectNum},实际收到的消息总数为$sum,多收到${value}个消息"
+        elif [ "$expectNum" -ge "$sum" ];then
+		value=`expr $expectNum - $sum`
+	        message="错误:预期订阅和发布交互数为${expectNum},实际收到的消息总数为$sum,少收到${value}个消息"
+        fi
         reportLog $reportPath $message
         echo ${sum}
 }
@@ -1229,7 +1241,7 @@ querySubCR(){
 #本地单向证书认证并记录结果
 subCaQuLocal(){
  subCaLogPath=$sPath/subCaSessionLogs/
- subCaLoop
+ subCa
  sleep $subCaWait
  queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 }
@@ -1328,10 +1340,63 @@ subCCaRemote(){
   done  
 }
 
+#远程机器执行订阅，无创建账户操作
+subCCaNoAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCCaNoAccCMD"&
+  done
+}
+
+
 #远程发布,这里不需要改配置pub的起始序号，因为这里使用subcca中的序号
 pubCCaRemote(){
   for ip in ${ip_array[*]}
   do
      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCCaCMD"&
   done 
+}
+
+#远程发布,这里不需要改配置pub的起始序号，因为这里使用subcca中的序号
+pubCCaNoAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCCaNoAccCMD"&
+  done
+}
+
+#远程机器执行订阅
+subCaConRemote(){
+  local step=1
+  local snum=$1
+  local subnum=$2
+  for ip in ${ip_array[*]}
+  do
+        scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        local newStart=`expr $snum + $subnum \* $step`
+        ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaConSNum=${snum}/subCaConSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCaConCMD"&
+        ((step++))
+  done
+}
+
+#创建发布消息的用户,序号与sub的序号一致
+pubCaConAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConAccCMD"&
+  done
+
+}
+
+#远程机器客户端发布消息
+pubCaConNoAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConNoAccCMD"&
+  done
 }

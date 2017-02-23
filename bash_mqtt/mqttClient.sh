@@ -151,16 +151,17 @@ subLoop(){
  subLoopNoAcc
 }
 
+#使用证书认证订阅不同主题
 subCaNoAcc(){
   if [ -z "$1" ];then
-     local autype=$auType
+     local subAuType=$auType
   else
-     local autype=$1
+     local subAuType=$1
   fi
   if [ -z "$2" ];then
-  	local qos=0
+  	local subQos=0
   else
-  	local qos=$2
+  	local subQos=$2
   fi
   if $capFlag;then cap "subCa";fi
   #relog收到消息保存到日志
@@ -172,25 +173,26 @@ subCaNoAcc(){
   do
       subCaTopic="${subCaTopicPre}${i}"
       subCaID="${subCaIDPre}${i}"
-      sub $subCaTopic $subCaID $defaultUsr $defaultPasswd $qos $relog $autype 
+      sub $subCaTopic $subCaID $defaultUsr $defaultPasswd $subQos $relog $subAuType 
   done
   echo `expr $i - $subCaSNum + 1` > $nulog	
 }
 
-subCaLoop(){
+#使用证书认证订阅不同主题
+subCa(){
   if [ -z "$1" ];then
-     local autype=$auType
+     local subAuType=$auType
   else
-     local autype=$1
+     local subAuType=$1
   fi
   if [ -z "$2" ];then
-  	local qos=0
+  	local subQos=0
   else
-  	local qos=$2
+  	local subQos=$2
   fi
   if $capFlag;then cap "subCa";fi
   createAccount $subCaIDPre $subCaSNum $subCaENum "${intf}-${cIP}-subCa" 
-  subCaNoAcc $autype $qos 
+  subCaNoAcc $autype $subQos 
 }
 
 #一次性订阅
@@ -326,51 +328,95 @@ subCRLoop(){
    subCRNoAcc
 }
 
-#证书认证方式订阅
+#证书认证方式单次订阅
 subCCaNoAcc(){
 	echoFlag=false
-        local subSNum=$1
-        local subENum=$2
-        j=0
         local relog=${sPath}/${subCCaRecieved}
         local nulog=${sPath}/${subCCaFName}
         : > $relog
         : > $nulog
-        for i in `seq $subSNum $subENum`
+        for i in `seq $subCCaSNum $subCCaENum`
         do
 	        subCCaID="$subCCaIDPre$i"
                 subCCaTopic="$subCCaTopicPre$i"
                 subC $subCCaTopic $subCCaID $defaultUsr $defaultPasswd $subCCaQos $relog 1 $auType
-		echo `expr $i - $subSNum + 1` > $nulog
+		echo `expr $i - $subCCaSNum + 1` > $nulog
         done
 }
 
-#证书认证方式订阅
+#证书认证方式单次订阅
 subCCa(){
    createAccount $subCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-subCCa"  
-   subCCaNoAcc $subCCaSNum $subCCaENum 
+   subCCaNoAcc 
 }
 
-#证书认证方式发布
+#证书认证方式发布消息给证书认证方式的单次订阅
 pubCCaNoAcc(){
         local nulog=${sPath}/${pubCCaFName}
-        local pubSNum=$1
-        local pubENum=$2
 	: > $nulog
-        for i in `seq $pubSNum $pubENum`
+        for i in `seq $subCCaSNum $subCCaENum`
  	do
              pubCCaID="$pubCCaIDPre$i"
              subCCaTopic="$subCCaTopicPre$i"
              pubCCaMsg="$pubCCaMsgPre$i" 
 	     pub $subCCaTopic $pubCCaMsg $pubCCaID $pubCCaQos $defaultUsr $defaultPasswd $auType
-	     echo `expr $i - $pubSNum + 1` > $nulog
+	     echo `expr $i - $subCCaSNum + 1` > $nulog
 	done
 }
 
+#证书认证方式发布消息给证书认证方式的单次订阅
 #证书认证方式发布,起始序号与subCCa中的保持一致
 pubCCa(){
    createAccount $pubCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-pubCCa"  
-   pubCCaNoAcc $subCCaSNum $subCCaENum
+   pubCCaNoAcc
+}
+
+#证书认证方式订阅不同主题
+subCaConNoAcc(){
+        echoFlag=false
+        local relog=${sPath}/${subCaConRecieved}
+        local nulog=${sPath}/${subCaConFName}
+        : > $relog
+        : > $nulog
+        for i in `seq $subCaConSNum $subCaConENum`
+        do
+                subCaConID="$subCaConIDPre$i"
+                subCaConTopic="$subCaConTopicPre$i"
+                sub $subCaConTopic $subCaConID $defaultUsr $defaultPasswd $subCaConQos $relog $auType
+                echo `expr $i - $subCaConSNum + 1` > $nulog
+        done
+}
+
+#证书认证方式订阅不同主题
+subCaCon(){
+  createAccount $subCaConIDPre $subCaConSNum $subCaConENum "${intf}-${cIP}-subCaCon"
+  subCaConNoAcc
+}
+
+#证书认证方式发布消息给证书认证方式的单次订阅
+pubCaConNoAcc(){
+        local nulog=${sPath}/${pubCaConFName}
+        : > $nulog
+        for i in `seq $subCaConSNum $subCaConENum`
+        do
+             pubCaConID="$pubCaConIDPre$i"
+             subCaConTopic="$subCaConTopicPre$i"
+             pubCaConMsg="$pubCaConMsgPre$i"
+             pub $subCaConTopic $pubCaConMsg $pubCaConID $pubCaConQos $defaultUsr $defaultPasswd $auType
+             echo `expr $i - $subCaConSNum + 1` > $nulog
+        done
+}
+
+#创建发布消息的用户
+pubCaConAcc(){
+  createAccount $pubCaConIDPre $subCaConSNum $subCaConENum "${intf}-${cIP}-pubCaCon"
+}
+
+#证书认证方式发布消息给证书认证方式的单次订阅
+#证书认证方式发布,起始序号与subCCa中的保持一致
+pubCaCon(){
+   pubCaConAcc
+   pubCaConNoAcc
 }
 
 #mqtt pub
@@ -684,18 +730,18 @@ stopSubPubR(){
 }
 
 ###un finished
-subMuTopic(){
- local relog=${sPath}/$subMuTopicRecieved
- local nulog=${sPath}/$subMuTopicNum
+subMuClient(){
+ local relog=${sPath}/$subMuClientRecieved
+ local nulog=${sPath}/$subMuClientFName
  local count=0 
  : > $relog
  : > $nulog
- for i in `seq $subMuTopicSNum $subMuTopicENum`
+ for i in `seq $subMuClientSNum $subMuClientENum`
  do
-    subMuClientSNum=`expr $subMuTopicSNum  \*  $i`
+    subMuClientSNum=`expr $subMuClientSNum  \*  $i`
     subMuClientENum=`expr subMuClientSNum + $subMuClientNum -1`
-    local subTopic="${subMuTopicPre}${i}"
-    local subID="${subMuTopicSubIDPre}${i}"
+    local subTopic="${subMuClientPre}${i}"
+    local subID="${subMuClientSubIDPre}${i}"
     local qos=0
     for j in `seq $subMuClientSNum $subMuClientENum`
     do
@@ -768,8 +814,8 @@ case $1 in
    "pubc")
      pubC
      ;;
-   "subcaloop")
-     subCaLoop
+   "subca")
+     subCa
      ;;
    "subcatopic")
      subCaTopic
@@ -777,8 +823,26 @@ case $1 in
    "subcca")
      subCCa
      ;;
+   "subccanoacc")
+     subCCaNoAcc
+     ;;
+   "subcacon")
+     subCaCon
+     ;;
    "pubcca")
      pubCCa
+     ;;
+   "pubccanoacc")
+     pubCCaNoAcc
+     ;;
+   "pubcacon")
+     pubCaCon
+     ;;
+   "pubcaconacc")
+     pubCaConAcc
+     ;;
+   "pubcaconnoacc")
+     pubCaConNoAcc
      ;;
    *)
      #echo "mqttClient.sh"

@@ -29,6 +29,9 @@ case $1 in
    "subpubcca")
      subPubCCa
      ;;
+   "subpubcacon")
+     subPubCaCon
+     ;;
    "subcaatopic")
      subCaATopic
      ;;
