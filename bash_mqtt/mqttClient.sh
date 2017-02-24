@@ -17,7 +17,7 @@ sub(){
       subid=$2
       subAuType=$7
       #当没有赋值$7时设置subAuType的默认值为“pw”
-      if [ -n "$subAuType" ];then subAuTye="pw";fi
+      if [ -z "$subAuType" ];then subAuType="pw";fi
       if [ "$subAuType" = "pw" ];then
          if [ -z "$3" ] || [ -z "$4" ] ;then
               echo "ERROR:Please input the mosquitto client usrname and password!"
@@ -179,7 +179,7 @@ subCaNoAcc(){
 }
 
 #使用证书认证订阅不同主题
-subCa(){
+subCaAuth(){
   if [ -z "$1" ];then
      local subAuType=$auType
   else
@@ -192,7 +192,7 @@ subCa(){
   fi
   if $capFlag;then cap "subCa";fi
   createAccount $subCaIDPre $subCaSNum $subCaENum "${intf}-${cIP}-subCa" 
-  subCaNoAcc $autype $subQos 
+  subCaNoAcc $subAuType $subQos 
 }
 
 #一次性订阅
@@ -729,27 +729,56 @@ stopSubPubR(){
  stopPubR
 }
 
-###un finished
-subMuClient(){
- local relog=${sPath}/$subMuClientRecieved
- local nulog=${sPath}/$subMuClientFName
- local count=0 
+#一台机器上订阅多个主题
+#且一个主题有多个客户端同时订阅
+subCaMu(){
+ local relog=${sPath}/$subCaMuRecieved
+ local nulog=${sPath}/$subCaMuFName
+ local clientNum=0 
  : > $relog
  : > $nulog
- for i in `seq $subMuClientSNum $subMuClientENum`
+ #创建账户
+ local subCaMuENum=`expr $subCaMuCNum \* $subCaMuTopicENum`
+ local subCaMuSNum=`expr $subCaMuENum - \( $subCaMuCNum \* $subCaMuTopicNum \) + 1`
+ createAccount $subCaMuCIDPre $subCaMuSNum $subCaMuENum "${intf}-${cIP}-subCaMu"
+ for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
  do
-    subMuClientSNum=`expr $subMuClientSNum  \*  $i`
-    subMuClientENum=`expr subMuClientSNum + $subMuClientNum -1`
-    local subTopic="${subMuClientPre}${i}"
-    local subID="${subMuClientSubIDPre}${i}"
-    local qos=0
-    for j in `seq $subMuClientSNum $subMuClientENum`
+    local subCaMuCENum=`expr $subCaMuCNum \* $i`
+    local subCaMuCSNum=`expr $subCaMuCENum - $subCaMuCNum + 1`
+    local subTopic="${subCaMuTopicPre}${i}"
+    for j in `seq $subCaMuCSNum $subCaMuCENum`
     do
-      sub $subTopic $subID $defaultUsr $defaultPasswd $qos $relog $auType
-      ((count++))
-      echo $count > $nulog
+      local subID="${subCaMuCIDPre}${j}"
+      sub $subTopic $subID $defaultUsr $defaultPasswd $subCaMuQos $relog $auType
+      ((clientNum++))
+      echo $clientNum > $nulog
     done
  done
+}
+
+#创建账户
+pubCaMuAcc(){
+  createAccount $pubCaMuIDPre $subCaMuTopicSNum $subCaMuTopicENum "${intf}-${cIP}-pubCaMu"
+}
+
+#发布消息
+pubCaMuNoAcc(){
+ 	local nulog=${sPath}/${pubCaMuFName}
+	: > $nulog
+        for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
+        do
+           local  pubCaMuID="$pubCaMuIDPre$i"
+           local  subCaMuTopic="$subCaMuTopicPre$i"
+           local  pubCaMuMsg="$pubCaMuMsgPre$i"
+           pub $subCaMuTopic $pubCaMuMsg $pubCaMuID $pubCaMuQos $defaultUsr $defaultPasswd $auType
+           echo `expr $i - $subCaMuTopicSNum + 1` > $nulog
+        done
+}
+
+#发布消息
+pubCaMu(){
+  createAccount $pubCaMuIDPre $subCaMuTopicSNum $subCaMuTopicENum "${intf}-${cIP}-pubCaMu"
+  pubCaMuNoAcc
 }
 
 #订阅单个主题，发送大量消息
@@ -814,8 +843,8 @@ case $1 in
    "pubc")
      pubC
      ;;
-   "subca")
-     subCa
+   "subcaauth")
+     subCaAuth
      ;;
    "subcatopic")
      subCaTopic
@@ -843,6 +872,18 @@ case $1 in
      ;;
    "pubcaconnoacc")
      pubCaConNoAcc
+     ;;
+   "subcamu")
+     subCaMu
+     ;;
+   "pubcamu")
+     pubCaMu
+     ;;
+   "pubcamuacc")
+     pubCaMuAcc
+     ;;
+   "pubcamunoacc")
+     pubCaMuNoAcc
      ;;
    *)
      #echo "mqttClient.sh"

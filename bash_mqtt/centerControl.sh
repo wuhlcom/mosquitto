@@ -25,7 +25,7 @@ subCReCMD=subcreloop
 subCReNoAccCMD=subcreloopnoacc
 retainCMD=subpubr
 pubRCMD=pubrloop
-subCaCMD=subca
+subCaAuthCMD=subcaauth
 stopRetainCMD=stopsubpubr
 subCCaCMD=subcca
 subCCaNoAccCMD=subccanoacc
@@ -34,6 +34,9 @@ pubCCaNoAccCMD=pubccanoacc
 pubCaConAccCMD=pubcaconacc
 pubCaConNoAccCMD=pubcaconnoacc
 subCaConCMD=subcacon
+subCaMuCMD=subcamu
+pubCaMuAccCMD=pubcamuacc
+pubCaMuNoAccCMD=pubcamunoacc
 sshPort=22
 subRs="0 0"
 #每台客户机命令发下成功后等待间隔
@@ -1239,14 +1242,14 @@ querySubCR(){
 }
 
 #本地单向证书认证并记录结果
-subCaQuLocal(){
+subCaAuthQuLocal(){
  subCaLogPath=$sPath/subCaSessionLogs/
- subCa
+ subCaAuth
  sleep $subCaWait
  queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 }
-#远程单身证书认证
-subCaRemote(){
+#远程单向证书认证
+subCaAuthRemote(){
 	step=1
         for ip in ${ip_array[*]}
         do
@@ -1261,10 +1264,10 @@ subCaRemote(){
 
 }
 #远程订阅并记录结果
-subCaQuRemote(){
+subCaAuthQuRemote(){
   #与subQuLocal路径保持一致
   subCaLogPath=$sPath/subCaSessionLogs/
-  subCaRemote
+  subCaAuthRemote
   sleep $subCaWait
   queryRemote $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 }
@@ -1400,3 +1403,44 @@ pubCaConNoAccRemote(){
         ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConNoAccCMD"&
   done
 }
+
+#远程订阅不同主题
+#snum = subCaMuTopicSNum
+#subnum = subCaMuTopicNum
+subCaMuRemote(){
+  local step=1
+  local snum=$1
+  local subnum=$2
+  for ip in ${ip_array[*]}
+  do
+        scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        local newStart=`expr $snum + $subnum \* $step`
+        ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaMuTopicSNum=${snum}/subCaMuTopicSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCaMuCMD"&
+        ((step++))
+  done
+}
+
+#创建发布消息的用户,序号与sub的序号一致
+pubCaMuAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuAccCMD"&
+  done
+
+}
+
+#远程机器客户端发布消息
+pubCaMuNoAccRemote(){
+  for ip in ${ip_array[*]}
+  do
+        if [ "$ip" = "${localPcIP}" ];then continue;fi
+        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuNoAccCMD"&
+  done
+}
+
+if [ "sub" = "$1" ];then
+   subQuLocal
+fi

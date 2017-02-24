@@ -287,9 +287,9 @@ subCa(){
    logDir="${cuPath}/subCaRecords"
    logDirRemote="${remote_dir}/subCaRecords"
    local expTotalNum=0
-   subCaQuRemote
+   subCaAuthQuRemote
    if $localPcFlag;then
-	subCaQuLocal
+	subCaAuthQuLocal
 	expTotalNum=`expr $expectNum + $subCaNum`
    fi
    sleep $waitForSession
@@ -497,8 +497,8 @@ subPubCCa(){
 
 #testcase 10
 subPubCaCon(){
-  subCaConSessionLog=$sPath/subCaConSessionLogs/
-  subCaConMsgLog=$sPath/subCaConMsgLogs/
+  subCaConSessionLog=$sPath/subPubCaConSessionLogs/
+  subCaConMsgLog=$sPath/subPubCaConMsgLogs/
   local p=1
   local length=0
   local expTotalNum=$subCaConNum
@@ -545,22 +545,111 @@ subPubCaCon(){
   fi
   #为本机上的客户端创建账户
   pubCaConAcc
+  sleep $pubCaConWait
+
   ###开始循环发布消息 
   while [ "$p" -le "$subPubCaConTimes" ]
   do
+    #清除旧的消息
+    : > $sPath/$subCaConRecieved
+    if [ "$length" -ne "0" ];then
+       ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaConRecieved}"
+    fi
+
+    #发布消息
     if [ "$length" -ne "0" ];then
        pubCaConNoAccRemote
     fi
     pubCaConNoAcc
     sleep $pubCaConWait
 
-    msg="=========第${p}次查询收到消息情况======="
+    #查询结果
+    local msg="=========第${p}次查询收到消息情况======="
     queryMsgNum $subCaConMsgLog $msg $subCaConRecieved $subCaConNum
     ((p++))
-    : > $sPath/$subCaConRecieved
+  done
+
+  if [ "$length" -ne "0" ];then
+        stopSubRemote
+  fi
+  stopSub
+  sleep $waitForSession
+  stopSpecScript
+}
+
+subPubCaMu(){
+  subPubCaMuSessionLog=$sPath/subPubCaMuSessionLogs/
+  subPubCaMuMsgLog=$sPath/subPubCaMuMsgLogs/
+  local p=1
+  local length=0
+  #单台PC会话数
+  local expProNum=`expr $subCaMuCNum \* $subCaMuTopicNum`
+  #多台PC会话总数 
+  local expTotalNum=$expProNum 
+  sumPro1=0
+  sumSes1=0
+  if [ -n "$ip_array" ];then
+     length=${#ip_array[*]}
+  fi
+
+  if [ "$length" -ne "0" ];then
+      subCaMuRemote $subCaMuTopicSNum $subCaMuTopicNum
+      expTotalNum=`expr \( $length + 1 \) \*  $expProNum`
+  fi
+  subCaMu
+  sleep $subCaMuWait
+ 
+  if [ "$length" -ne "0" ];then
+     queryRemote $subPubCaMuSessionLog $subCaMuFName $expProNum $srv_ip $caPort
+  fi
+  queryLocal $subPubCaMuSessionLog $subCaMuFName $expProNum $srv_ip $caPort
+
+  ##################################################################
+  local sumProAll=`expr $proNum1 + $sumPro1`
+  local sumSesAll=`expr $sesNum1 + $sumSes1`
+  if [ "$sumProAll" = "$expTotalNum" ];then
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll"
+  else
+      value=`expr $expTotalNum - $sumProAll`
+         rs="预期订阅总process数为$expTotalNum,实际数量为$sumProAll,相差${value}"
+  fi
+  reportLog $subPubCaMuSessionLog $rs
+
+  if [ "$sumSesAll" = "$expTotalNum" ];then
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll"
+  else
+     value=`expr $expTotalNum - $sumSesAll`
+        rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
+  fi
+  reportLog $subPubCaMuSessionLog $rs
+  ####################################################################
+
+  if [ "$length" -ne "0" ];then
+    pubCaMuAccRemote
+  fi
+  pubCaMuAcc
+  sleep $pubCaMuWait
+
+  ######开始循环发布消息 
+  while [ "$p" -le "$subPubCaMuTimes" ]
+  do
+    #清除旧的消息
+    : > $sPath/$subCaMuRecieved
     if [ "$length" -ne "0" ];then
-       ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaConRecieved}"
+       ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaMuRecieved}"
     fi
+
+    #发布消息
+    if [ "$length" -ne "0" ];then
+       pubCaMuNoAccRemote
+    fi
+    pubCaMuNoAcc
+    sleep $pubCaMuWait
+
+    #查询结果
+    local msg="=========第${p}次查询收到消息情况======="
+    queryMsgNum $subPubCaMuMsgLog $msg $subCaMuRecieved $expProNum
+    ((p++))
   done
 
   if [ "$length" -ne "0" ];then

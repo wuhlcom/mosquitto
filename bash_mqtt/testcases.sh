@@ -26,11 +26,14 @@ case $1 in
    "subca")
      subCa
      ;;
-   "subpubcca")
-     subPubCCa
+   "subpubcamu")
+     subPubCaMu
      ;;
    "subpubcacon")
      subPubCaCon
+     ;;
+   "subpubcca")
+     subPubCCa
      ;;
    "subcaatopic")
      subCaATopic
@@ -45,6 +48,16 @@ case $1 in
      subFixAll
      sleep $tcGap
      subCPubR
+    # sleep $tcGap
+    # subCa
+     sleep $tcGap
+     subPubCaMu
+     sleep $tcGap
+     subPubCCa
+     sleep $tcGap
+     subCaATopic
+     sleep $tcGap
+     subPubCaCon
      sleep $tcGap
      subCReContinue
    ;;
