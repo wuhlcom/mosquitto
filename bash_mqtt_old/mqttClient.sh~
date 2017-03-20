@@ -9,16 +9,13 @@
 sPath=`dirname $0`
 source $sPath/mqtt.conf
 source $sPath/tcpdump.sh
-echoFlag=false
-scp ${sPath}/mqtt.conf $rootusr@${redisSrvIP}:${remote_dir}
+echoFlag=true
+scp ${sPath}/mqtt.conf $rootusr@${srv_ip}:${remote_dir}
 #mosquitto_sub
 sub(){
       subtopic=$1
       subid=$2
-      subAuType=$7
-      #当没有赋值$7时设置subAuType的默认值为“pw”
-      if [ -z "$subAuType" ];then subAuType="pw";fi
-      if [ "$subAuType" = "pw" ];then
+      if $mqttAuth;then
          if [ -z "$3" ] || [ -z "$4" ] ;then
               echo "ERROR:Please input the mosquitto client usrname and password!"
          fi
@@ -26,43 +23,31 @@ sub(){
          passwd=$4
          subqos=$5
          msglog=$6
-#        if $echoFlag;then
-#                 echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
- #       fi
+        if $echoFlag;then
+                 echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
+        fi
         if [ -z "$msglog" ];then
           mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
         else
           #注意">>"前后都有空格
           mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd >> $msglog&
         fi
-     elif [ "$subAuType" = "siCa" ];then
-         usr=$3
-         passwd=$4
-         subqos=$5
-         msglog=$6
-         mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath >> $msglog&
-     elif [ "$subAuType" = "biCa" ];then
-         usr=$3
-         passwd=$4
-         subqos=$5
-         msglog=$6
-         mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath>> $msglog&
-     else
+     else 
        if [ -n "$3" ];then
           subqos=$3
           msglog=$4
           if $echoFlag;then
-                 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
-          fi
+		 echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
+	  fi
           if [ -z "$msglog" ];then
              mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive&
-          else
+    	  else
              mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive >> $msglog&
           fi
        else
          if $echoFlag;then
            echo client  \'$subid\' sub topic \'$subtopic\'
-         fi
+	 fi
          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
       fi
      fi
@@ -78,18 +63,15 @@ createAccount(){
    fi
 }
 
-#订阅相同主题
 subFixNoAcc(){
    echoFlag=false
    if $capFlag;then
          cap "subFix"
    fi
-   #relog收到消息保存到日志
+   
    relog=${sPath}/${subFixRecieved}	
-   #nulog命令下发数量计数日志
    nulog=${sPath}/${subFixFName}	
    : > $relog	
-   : > $nulog	
    j=0
    for i in `seq $subFixSNum $subFixENum`
    do
@@ -103,17 +85,16 @@ subFixNoAcc(){
       if [ $j -ge 3 ]; then
           j=0
       fi
-      echo `expr $i - $subFixSNum + 1` > $nulog	
+      : > $nulog	
+      echo `expr $i - $subFixSNum + 1` >> $nulog	
    done
 }
 
-#创建账户并订阅相同主题
 subFix(){
  createAccount $subFixIDPre $subFixSNum $subFixENum "${intf}-${cIP}-subFix"  
  subFixNoAcc 
 }
 
-#订阅不同主题
 #mosquitto_sub
 subLoopNoAcc(){
 	if $capFlag;then
@@ -122,7 +103,6 @@ subLoopNoAcc(){
           
 	j=0
 	nulog=${sPath}/${subFName}
-	: > $nulog
         #create mqtt usr passwd
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
 	for i in `seq $sSubNum $eSubNum`
@@ -138,110 +118,45 @@ subLoopNoAcc(){
                 if [ $j -ge 3 ]; then
                          j=0
                 fi
-	        #echo `date +"%Y-%m-%d %H:%M:%S"`>${sPath}/${subFName}
-	       	echo `expr $i - $sSubNum + 1` > $nulog	
+ 
+	#echo `date +"%Y-%m-%d %H:%M:%S"`>${sPath}/${subFName}
+		: > $nulog
+	       	echo `expr $i - $sSubNum + 1` >> $nulog	
 	done
 	#monitorLog subresult&
 	$sPath/logger.sh monitorlog&
 }
 
-#创建用户并订阅不同主题
 subLoop(){
  createAccount $subIDPre $sSubNum $eSubNum "${intf}-${cIP}-sub"  
  subLoopNoAcc
-}
-
-#使用证书认证订阅不同主题
-subCaNoAcc(){
-  if [ -z "$1" ];then
-     local subAuType=$auType
-  else
-     local subAuType=$1
-  fi
-  if [ -z "$2" ];then
-  	local subQos=0
-  else
-  	local subQos=$2
-  fi
-  if $capFlag;then cap "subCa";fi
-  #relog收到消息保存到日志
-  relog=${sPath}/${subCaRecieved}
-  nulog=${sPath}/${subCaFName}
-  : > $nulog
-  : > $relog
-  for i in `seq $subCaSNum $subCaENum`
-  do
-      subCaTopic="${subCaTopicPre}${i}"
-      subCaID="${subCaIDPre}${i}"
-      sub $subCaTopic $subCaID $defaultUsr $defaultPasswd $subQos $relog $subAuType 
-  done
-  echo `expr $i - $subCaSNum + 1` > $nulog	
-}
-
-#使用证书认证订阅不同主题
-subCaAuth(){
-  if [ -z "$1" ];then
-     local subAuType=$auType
-  else
-     local subAuType=$1
-  fi
-  if [ -z "$2" ];then
-  	local subQos=0
-  else
-  	local subQos=$2
-  fi
-  if $capFlag;then cap "subCa";fi
-  createAccount $subCaIDPre $subCaSNum $subCaENum "${intf}-${cIP}-subCa" 
-  subCaNoAcc $subAuType $subQos 
 }
 
 #一次性订阅
 subC(){
        subtopic=$1
        subid=$2
-       if [ -z "$3" ] || [ -z "$4" ] ;then
+      if [ -z "$3" ] || [ -z "$4" ] ;then
             echo "ERROR:Please input the mosquitto client usrname and password!"
-       fi
+      fi
       
        usr=$3
        passwd=$4
        subqos=$5
        relog=$6
-       if [ -z "$7" ];then
+      if [ -z "$7" ];then
         Ccount=$subCcount
-       else
-        Ccount=$7
-       fi
-       
-       if [ -z "$8" ];then
-         subAuType="pw"
-       else
-         subAuType=$8
-       fi
-
-       if $echoFlag;then
-            echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
-       fi
-      
-       if [ "$subAuType" = "siCa" ];then
-         if [ -z "$relog" ];then
-		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath -C $Ccount&
- 	 else
-		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath -C $Ccount >> $relog&
-	 fi
-       elif [ "$subAuType" = "biCa" ];then
-         if [ -z "$relog" ];then
-		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath -C $Ccount&
-         else
-		mosquitto_sub -t $subtopic -h $srv_ip -p $caPort -i $subid -k $keepLive -u $usr  -P $passwd --cafile $caPath --cert $crtPath --key $keyPath -C $Ccount >> $relog&
-         fi
       else
-         if [ -z "$relog" ];then
-         	mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
-	 else
-               #保存收到的消息
-         	mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount >> $relog&
-         fi
+        Ccount=$7
+      fi
+
+      if $echoFlag;then
+            echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
+      fi
+      if [ -z "$relog" ];then
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount&
+      else
+         mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd -C $Ccount >> $relog&
       fi
 } 
 
@@ -294,6 +209,7 @@ subCReLoopNoAcc(){
                 :>$nulog
                 echo `expr $i - $subCResNum + 1` >> $nulog
         done
+
 }
 
 subCReLoop(){
@@ -308,7 +224,6 @@ subCRNoAcc(){
         relog=${sPath}/${subCPubRRecieved}
         nulog=${sPath}/${subRFName}
         : > $relog
-        : > $nulog
         for i in `seq $pubRsNum $pubReNum`
         do
                 subRID="$subRIDPre$i"
@@ -318,128 +233,33 @@ subCRNoAcc(){
                 if [ $j -ge 3 ]; then
                        j=0
                 fi
-                echo `expr $i - $pubRsNum + 1` > $nulog
+                : > $nulog
+                echo `expr $i - $pubRsNum + 1` >> $nulog
         done
-}
 
+}
 #订阅的主题，起始和结束序列与pubRLoop()保持一致
 subCRLoop(){
    createAccount $subRIDPre $pubRsNum $pubReNum "${intf}-${cIP}-subCRLoop"  
    subCRNoAcc
 }
-
-#证书认证方式单次订阅
-subCCaNoAcc(){
-	echoFlag=false
-        local relog=${sPath}/${subCCaRecieved}
-        local nulog=${sPath}/${subCCaFName}
-        : > $relog
-        : > $nulog
-        for i in `seq $subCCaSNum $subCCaENum`
-        do
-	        subCCaID="$subCCaIDPre$i"
-                subCCaTopic="$subCCaTopicPre$i"
-                subC $subCCaTopic $subCCaID $defaultUsr $defaultPasswd $subCCaQos $relog 1 $auType
-		echo `expr $i - $subCCaSNum + 1` > $nulog
-        done
-}
-
-#证书认证方式单次订阅
-subCCa(){
-   createAccount $subCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-subCCa"  
-   subCCaNoAcc 
-}
-
-#证书认证方式发布消息给证书认证方式的单次订阅
-pubCCaNoAcc(){
-        local nulog=${sPath}/${pubCCaFName}
-	: > $nulog
-        for i in `seq $subCCaSNum $subCCaENum`
- 	do
-             pubCCaID="$pubCCaIDPre$i"
-             subCCaTopic="$subCCaTopicPre$i"
-             pubCCaMsg="$pubCCaMsgPre$i" 
-	     pub $subCCaTopic $pubCCaMsg $pubCCaID $pubCCaQos $defaultUsr $defaultPasswd $auType
-	     echo `expr $i - $subCCaSNum + 1` > $nulog
-	done
-}
-
-#证书认证方式发布消息给证书认证方式的单次订阅
-#证书认证方式发布,起始序号与subCCa中的保持一致
-pubCCa(){
-   createAccount $pubCCaIDPre $subCCaSNum $subCCaENum "${intf}-${cIP}-pubCCa"  
-   pubCCaNoAcc
-}
-
-#证书认证方式订阅不同主题
-subCaConNoAcc(){
-        echoFlag=false
-        local relog=${sPath}/${subCaConRecieved}
-        local nulog=${sPath}/${subCaConFName}
-        : > $relog
-        : > $nulog
-        for i in `seq $subCaConSNum $subCaConENum`
-        do
-                subCaConID="$subCaConIDPre$i"
-                subCaConTopic="$subCaConTopicPre$i"
-                sub $subCaConTopic $subCaConID $defaultUsr $defaultPasswd $subCaConQos $relog $auType
-                echo `expr $i - $subCaConSNum + 1` > $nulog
-        done
-}
-
-#证书认证方式订阅不同主题
-subCaCon(){
-  createAccount $subCaConIDPre $subCaConSNum $subCaConENum "${intf}-${cIP}-subCaCon"
-  subCaConNoAcc
-}
-
-#证书认证方式发布消息给证书认证方式的单次订阅
-pubCaConNoAcc(){
-        local nulog=${sPath}/${pubCaConFName}
-        : > $nulog
-        for i in `seq $subCaConSNum $subCaConENum`
-        do
-             pubCaConID="$pubCaConIDPre$i"
-             subCaConTopic="$subCaConTopicPre$i"
-             pubCaConMsg="$pubCaConMsgPre$i"
-             pub $subCaConTopic $pubCaConMsg $pubCaConID $pubCaConQos $defaultUsr $defaultPasswd $auType
-             echo `expr $i - $subCaConSNum + 1` > $nulog
-        done
-}
-
-#创建发布消息的用户
-pubCaConAcc(){
-  createAccount $pubCaConIDPre $subCaConSNum $subCaConENum "${intf}-${cIP}-pubCaCon"
-}
-
-#证书认证方式发布消息给证书认证方式的单次订阅
-#证书认证方式发布,起始序号与subCCa中的保持一致
-pubCaCon(){
-   pubCaConAcc
-   pubCaConNoAcc
-}
-
 #mqtt pub
 pub(){
-        local pubtopic=$1
-        local pubmsg=$2
-	local pubid=$3
-        local pubqos=$4
-        local usr=$5
-	local passwd=$6
-        local pubAuType=$7
-        if [ -z "$7" ];then pubAuType="pw"; fi
-        if [ "$pubAuType" = "pw" ] ;then
-             if [ -z "$3" ] || [ -z "$4" ] ;then
-       		echo "ERROR:Please input the mosquitto client usrname and password!"
-             fi
-             mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
-        elif [ "$pubAuType" = "siCa" ] ;then
-             mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $caPort -i $pubid -q $pubqos -u $usr -P $passwd --cafile $caPath&
-        elif [ "$pubAuType" = "biCa" ] ;then
-	     mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $caPort -i $pubid -q $pubqos -u $usr -P $passwd --cafile $caPath --cert $crtPath --key $keyPath&
+        pubtopic=$1
+        pubmsg=$2
+	pubid=$3
+        if $mqttAuth;then
+                 if [ -z "$3" ] || [ -z "$4" ] ;then
+              		echo "ERROR:Please input the mosquitto client usrname and password!"
+	         fi
+        	 pubqos=$4
+        	 usr=$5
+	         passwd=$6
+		 mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid -q $pubqos -u $usr -P $passwd&
+                 sleep 1.5
         else
-        	if [ -n "$4" ];then
+		if [ -n "$4" ];then
+        		pubqos=$4
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid  -q $pubqos&
 		else
 			mosquitto_pub -t $pubtopic -m $pubmsg -h $srv_ip -p $srv_port -i $pubid&
@@ -729,71 +549,6 @@ stopSubPubR(){
  stopPubR
 }
 
-#一台机器上订阅多个主题
-#且一个主题有多个客户端同时订阅
-subCaMu(){
- local relog=${sPath}/$subCaMuRecieved
- local nulog=${sPath}/$subCaMuFName
- local clientNum=0 
- : > $relog
- : > $nulog
- #创建账户
- #最大账户序号=单主题客户端数 X 最大主题数
- local subCaMuENum=`expr $subCaMuCNum \* $subCaMuTopicENum`
- #最小账户序号=最大账户序号-(主题数 X 单主题客户端数)+1
- local subCaMuSNum=`expr $subCaMuENum - \( $subCaMuCNum \* $subCaMuTopicNum \) + 1`
- #创建账户
- createAccount $subCaMuCIDPre $subCaMuSNum $subCaMuENum "${intf}-${cIP}-subCaMu"
- #外层循环是单台PC主题数量
- for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
- do
-    #计算不同主题的起始和结束客户端ID
-    local subCaMuCENum=`expr $subCaMuCNum \* $i`
-    local subCaMuCSNum=`expr $subCaMuCENum - $subCaMuCNum + 1`
-    local subTopic="${subCaMuTopicPre}${i}"
-    #内层循环单主题客户端订阅
-    for j in `seq $subCaMuCSNum $subCaMuCENum`
-    do
-       local subID="${subCaMuCIDPre}${j}"
-       sub $subTopic $subID $defaultUsr $defaultPasswd $subCaMuQos $relog $auType
-       ((clientNum++))
-       echo $clientNum > $nulog
-    done
- done
-}
-
-#创建账户
-pubCaMuAcc(){
-  createAccount $pubCaMuIDPre $subCaMuTopicSNum $subCaMuTopicENum "${intf}-${cIP}-pubCaMu"
-}
-
-#发布消息
-pubCaMuNoAcc(){
- 	local nulog=${sPath}/${pubCaMuFName}
-	: > $nulog
-        for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
-        do
-           local  pubCaMuID="$pubCaMuIDPre$i"
-           local  subCaMuTopic="$subCaMuTopicPre$i"
-           local  pubCaMuMsg="$pubCaMuMsgPre$i"
-           pub $subCaMuTopic $pubCaMuMsg $pubCaMuID $pubCaMuQos $defaultUsr $defaultPasswd $auType
-           echo `expr $i - $subCaMuTopicSNum + 1` > $nulog
-        done
-}
-
-#发布消息
-pubCaMu(){
-  createAccount $pubCaMuIDPre $subCaMuTopicSNum $subCaMuTopicENum "${intf}-${cIP}-pubCaMu"
-  pubCaMuNoAcc
-}
-
-#订阅单个主题，发送大量消息
-subCaTopic(){
-    if $subCaATopicCap;then cap "subCaATopic";fi
-    createAccount $subCaATopicID 1 0 "${intf}-${cIP}-subATopic" 
-    : > $subCaATopicRecieved 
-    sub $subCaATopic $subCaATopicID $defaultUsr $defaultPasswd $subCaATopicQos $subCaATopicRecieved $auType
-}
 case $1 in
    "subloop")
      subLoop
@@ -848,48 +603,6 @@ case $1 in
      ;;
    "pubc")
      pubC
-     ;;
-   "subcaauth")
-     subCaAuth
-     ;;
-   "subcatopic")
-     subCaTopic
-     ;;
-   "subcca")
-     subCCa
-     ;;
-   "subccanoacc")
-     subCCaNoAcc
-     ;;
-   "subcacon")
-     subCaCon
-     ;;
-   "pubcca")
-     pubCCa
-     ;;
-   "pubccanoacc")
-     pubCCaNoAcc
-     ;;
-   "pubcacon")
-     pubCaCon
-     ;;
-   "pubcaconacc")
-     pubCaConAcc
-     ;;
-   "pubcaconnoacc")
-     pubCaConNoAcc
-     ;;
-   "subcamu")
-     subCaMu
-     ;;
-   "pubcamu")
-     pubCaMu
-     ;;
-   "pubcamuacc")
-     pubCaMuAcc
-     ;;
-   "pubcamunoacc")
-     pubCaMuNoAcc
      ;;
    *)
      #echo "mqttClient.sh"

@@ -738,26 +738,20 @@ subCaMu(){
  : > $relog
  : > $nulog
  #创建账户
- #最大账户序号=单主题客户端数 X 最大主题数
  local subCaMuENum=`expr $subCaMuCNum \* $subCaMuTopicENum`
- #最小账户序号=最大账户序号-(主题数 X 单主题客户端数)+1
  local subCaMuSNum=`expr $subCaMuENum - \( $subCaMuCNum \* $subCaMuTopicNum \) + 1`
- #创建账户
  createAccount $subCaMuCIDPre $subCaMuSNum $subCaMuENum "${intf}-${cIP}-subCaMu"
- #外层循环是单台PC主题数量
  for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
  do
-    #计算不同主题的起始和结束客户端ID
     local subCaMuCENum=`expr $subCaMuCNum \* $i`
     local subCaMuCSNum=`expr $subCaMuCENum - $subCaMuCNum + 1`
     local subTopic="${subCaMuTopicPre}${i}"
-    #内层循环单主题客户端订阅
     for j in `seq $subCaMuCSNum $subCaMuCENum`
     do
-       local subID="${subCaMuCIDPre}${j}"
-       sub $subTopic $subID $defaultUsr $defaultPasswd $subCaMuQos $relog $auType
-       ((clientNum++))
-       echo $clientNum > $nulog
+      local subID="${subCaMuCIDPre}${j}"
+      sub $subTopic $subID $defaultUsr $defaultPasswd $subCaMuQos $relog $auType
+      ((clientNum++))
+      echo $clientNum > $nulog
     done
  done
 }

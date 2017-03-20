@@ -5,7 +5,7 @@
 
 sPath=`dirname $0`
 source $sPath/mqtt.conf 
-logPath=$sPath/subLogs
+logPath=$sPath/mqttLogs
 
 #查询cpu top
 top_cpu() {
@@ -142,19 +142,19 @@ createPath(){
 
 #查询sub会话和进程，并将结果保存到文件中
 subProcess(){
-  local path=$1
+  path=$1
   createPath $path
-  local fileName=$2
-  local processFile="${path}/${fileName}_processes.log"
+  fileName=$2
+  processFile="${path}/${fileName}_processes.log"
   :>$processFile
   ps -ef | grep "mosquitto_sub" >> $processFile
 }
 
 #查询sub会话和进程，并将结果保存到文件中
 subSession(){
-  local path=$1
+  path=$1
   createPath $path
-  local fileName=$2
+  fileName=$2
   if [ -z "$3" ];then 
 	local srvIP=$srv_ip;
   else
@@ -166,7 +166,7 @@ subSession(){
 	local srvPort=$4
   fi
   local ipPort="${srvIP}:${srvPort}"
-  local sessionFile="${path}/${fileName}_sessions.log"
+  sessionFile="${path}/${fileName}_sessions.log"
   :>$sessionFile
   netstat -apnt |grep "$ipPort"|grep ESTABLISHED >> $sessionFile
 }
@@ -174,11 +174,11 @@ subSession(){
 #获取最新的文件名
 getLastLogFileName()
 {
-    local path=$1
+    path=$1
     cd $path
-    local lastLog=`ls -l |grep $currentTime | sort -k8rn | head -1 |awk '{print $9}'`
+    lastLog=`ls -l |grep $currentTime | sort -k8rn | head -1 |awk '{print $9}'`
     logFileName=$lastLog
-    cd $localTcDir
+    cd ..
 }
 #判断文件名是否存在及文件是否超过指定的大小
 isNeedNewFile()
@@ -212,7 +212,7 @@ createFile(){
     if [ -z "$2" ];then
       local  cfileName="${logsPath}/log-${intf}-${cIP}-${currentTime}.log"
     else
-      local  fName=$2
+      local   fName=$2
       local  cfileName="${logsPath}/${fName}-${intf}-${cIP}-${currentTime}.log"
     fi
     createPath $logsPath
@@ -224,7 +224,7 @@ createFile(){
     if [ $result -eq 0 ] || [ $result -eq 2 ];then
         logFileName=$cfileName
     else
-        logFileName=${logsPath}/${log_file_name}
+        logFileName=${logsPath}$log_file_name
     fi
 }
 

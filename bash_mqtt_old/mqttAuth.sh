@@ -31,8 +31,7 @@ redisSet(){
      else
        redisIndex=$4
      fi
-     #redisData=`echo "set UIDPWD:$redisID;$redisUsr;$redisPasswd $redisIndex"`
-     redisData=`echo "hmset CINFO:$redisID USER $redisUsr PASSWD $redisPasswd"`
+     redisData=`echo "set UIDPWD:$redisID;$redisUsr;$redisPasswd $redisIndex"`
      echo ${redisData} 
 }
 

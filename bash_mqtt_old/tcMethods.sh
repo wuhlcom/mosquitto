@@ -2,7 +2,7 @@
 #auth:wuhongliang
 #date:2016-12-18
 cuPath=`dirname $0`
-reportsPath=$cuPath/reports
+currLogsPath=$cuPath/logs
 source $cuPath/centerControl.sh
 #testcase 1
 #订阅指定数量，测试服务端最大支持订阅数
@@ -18,8 +18,8 @@ subAll(){
         fi
         sleep $waitForSession
         #records用来保存查询到的会话和进程的详细信息
-	local logDir="${reportsPath}/subAll/subAllRecords"
-        local logDirRemote="${remoteReportsDir}/subAll/subAllRecords"
+        logDir="${cuPath}/subAllRecords"
+        logDirRemote="${remote_dir}/subAllRecords"
         subProcess $logDir subAll
         subSession $logDir subAll
  	for ip in ${ip_array[*]}
@@ -27,28 +27,27 @@ subAll(){
 	   ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subAll"
 	   ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subAll"
 	done
-	stopSpecScript
         stopSubRemote
         if $localPcFlag;then
                 stopSub
                 sleep $waitForSession
+		stopSpecScript
         fi  
-
-        local sumProAll=`expr $proNum1 + $sumPro1`
-        local sumSesAll=`expr $sesNum1 + $sumSes1`
+        sumProAll=`expr $proNum1 + $sumPro1`
+        sumSesAll=`expr $sesNum1 + $sumSes1`
         if [ "$sumProAll" = "$expectNum" ];then
-           local rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
+            rs="预期订阅总process数为$expectNum,实际数量为$sumProAll"
         else
-           local value=`expr $expectNum - $sumProAll`
-           local rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
+            value=`expr $expectNum - $sumProAll`
+            rs="预期订阅总process数为$expectNum,实际数量为$sumProAll,相差${value}"
         fi  
         reportLog $reportPath $rs 
   
         if [ "$sumSesAll" = "$expectNum" ];then
-           local rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
+            rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll"
         else
-           local value=`expr $expectNum - $sumSesAll`
-           local rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
+            value=`expr $expectNum - $sumSesAll`
+            rs="预期订阅总session数为$expectNum,实际数量为$sumSesAll,相差${value}"
         fi  
         reportLog $reportPath $rs 
 }
@@ -67,8 +66,8 @@ subAllContinue(){
                 subLocal
                 sleep $subWait
         fi
-        local logDir="${reportsPath}/subAllContinue/subAllContinueRecords"
-        local logDirRemote="${remoteReportsDir}/subAllContinue/subAllContinueRecords"
+        logDir="${cuPath}/subAllContinueRecords"
+        logDirRemote="${remote_dir}/subAllContinueRecords"
         subProcess $logDir subAllcon
         subSession $logDir subAllcon
  	for ip in ${ip_array[*]}
@@ -77,11 +76,11 @@ subAllContinue(){
 	   ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subAllcon"
 	done
         queryContinue 
-	stopSpecScript
         stopSubRemote
         if $localPcFlag;then
                 stopSub
                 sleep $waitForSession
+		stopSpecScript
         fi  
 }
 
@@ -90,16 +89,17 @@ subAllContinue(){
 #反复操作5分钟
 #每一轮要求订阅数(进程和会话数)，发布后收到消息数，断开数要与预期一致
 subCContinue(){
- local k=1
- local reportPath=${reportsPath}/subCContinue/subCContinueSessionLogs/
+ k=1
+ spent=0
+ reportPath=${sPath}/subCContinueSessionLogs/
  #第一次调用需创建账户
- subCRemote&
  if $localPcFlag;then
-     subCLocal
+     subCLocal&
  fi
+ subCRemote
  sleep $subCWait 
 
- local msg="====================订阅后第${k}次查询订阅情况======================="
+ msg="====================订阅后第${k}次查询订阅情况======================="
  subCQuContinue $msg $reportPath $subCFName $subCNum
  pubC
  sleep $subCGap 
@@ -107,37 +107,38 @@ subCContinue(){
  unsubCQuContinue $msg $reportPath
  sleep $subCGap 
  #后续调用不再创建账户
- while [ "$k" -le "$subCTimes" ]
+ while [ "$spent" -le "$subCTime" ]
  do
       ((k++))
-       #远程订阅
-       subCNoAccRemote
-       #本地订阅
        if $localPcFlag;then
+         #本地订阅
          subCLoopNoAcc&
        fi
+       #远程订阅
+       subCNoAccRemote
        sleep $subCWait 
        msg="====================订阅后第${k}次查询订阅情况======================="
+       #查询
        subCQuContinue $msg $reportPath $subCFName $subCNum 
-       local rsSub=$?	 
+       rsSub=$?	 
 	   if [ "$rsSub" = "1" ];then 	     
 	     break; 
 	   fi
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCNoAcc
-       sleep $subCGap
        msg="====================取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $reportPath
-       local rsUn=$?
-       if [ "$rsUn" = "1" ];then 	     
+	   rsUn=$?
+	   if [ "$rsUn" = "1" ];then 	     
 	     break; 
-       fi
+	   fi
        sleep $subCGap
+       spent=`expr $k \* $subCGap`
  done
- stopSpecScript
  stopSubRemote
  if $localPcFlag;then
-      stopSub
+      #stopSub
+      stopSpecScript
  fi  
 }
 
@@ -145,11 +146,11 @@ subCContinue(){
 #多台机器同时长期订阅，订阅后多台机器同时不停发布消息
 #直到收到消息数达到预期目标或执行超时才停止
 subFixAll(){
-        local subFixSessionLogPath=$reportsPath/subFixAll/subFixAllSessionLogs/
-        local subFixMsgLogPath=$reportsPath/subFixAll/subFixAllMsgLogs/
-	local count=1
-        local realNum=0
-        lcoal skipTime=0
+        subFixSessionLogPath=$sPath/subFixAllSessionLogs/
+        subFixMsgLogPath=$sPath/subFixAllMsgLogs/
+	count=1
+        realNum=0
+        skipTime=0
         subFixRemote&
         if $localPcFlag;then
                 subFixLocal
@@ -160,8 +161,8 @@ subFixAll(){
 
         while true 
         do
-          pubFixRemote
           pubFixLocal
+          pubFixRemote
           sleep $puballwaittime
           msg="=============第${count}次查询订阅消息结果=============="
           realNum=`queryFixMsgNum $subFixMsgLogPath $msg $subFixRecieved $subFixCount`
@@ -178,10 +179,10 @@ subFixAll(){
 	  ((count++))
         done
 
-        stopSpecScript
         stopSubRemote
         if $localPcFlag;then
           stopSub
+          stopSpecScript
         fi
 }
 
@@ -207,8 +208,8 @@ subCPubR(){
  #停止远程订阅和删除保留消息
  stopRetainRemote
  #停止本地订阅和删除保留消息
- stopSpecScript
  stopSubPubR
+ stopSpecScript
 }
 
 #testcase 6
@@ -221,64 +222,67 @@ subCPubR(){
 #统计收到总的消息数
 subCReContinue(){
   #会话统计
-  local subCReSessionPath=${reportsPath}/subCReContinue/subCReContinueSessionLogs/
+  subCReSessionPath=${sPath}/subCReContinueSessionLogs/
   #消息统计
-  local subCReMsgPath=${reportsPath}/subCReContinue/subCReContinueMsgLogs/
+  subCReMsgPath=${sPath}/subCReContinueMsgLogs/
   #总的消息统计
-  local subCReMsgAllPath=${reportsPath}/subCReContinue/subCReContinueMsgAllLogs/
-  local k=1
-  local spent=0
-  local totalMsgNum=0
+  subCReMsgAllPath=${sPath}/subCReContinueMsgAllLogs/
+  k=1
+  spent=0
+  msgNum=0
+  totalMsgNum=0
   #第一次调用需创建账户
   subCReRemote
   if $localPcFlag;then
      subCReLoop
   fi
-  #订阅后等待
+  #等待订阅成功
   sleep $subCReWait
-  local msg="====================订阅后第${k}次查询订阅情况======================="
+  msg="====================订阅后第${k}次查询订阅情况======================="
   subCQuContinue $msg $subCReSessionPath $subCReFName $subCReNum
 
-  pubCRe 
-  #发布消息后等待
+  pubCRe
+  #等待消息发布完成 
   sleep $subCReGap
   msg="=============取消订阅后第${k}次查询订阅情况===================="
   unsubCQuContinue $msg $subCReSessionPath
   totalMsgNum=`queryMsgNum $subCReMsgPath $msg $subCReRecieved $subCReNum`
-  msg="===============第${k}次统计收到消息总数为${totalMsgNum}================"
+  msg="======第${k}次统计收到消息总数为${totalMsgNum}======"
   reportLog $subCReMsgAllPath $msg
 
-  #后续调用不再创建账户
-  while [ "$spent" -le "$subCReTime" ]
-  do
+ #后续调用不再创建账户
+ while [ "$spent" -le "$subCReTime" ]
+ do
       ((k++))
        #远程订阅
        subCReNoAccRemote
-        #本地订阅
        if $localPcFlag;then
+         #本地订阅
          subCReLoopNoAcc
        fi
-       msg="====================订阅后第${k}次查询订阅情况======================="
+       #等待订阅成功
        sleep $subCReWait
-       #查询订阅情况
+       msg="====================订阅后第${k}次查询订阅情况======================="
+       #查询
        subCQuContinue $msg $subCReSessionPath $subCReFName $subCReNum
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCReNoAcc
+       #等待消息发布完成 
        sleep $subCReGap
 
        totalMsgNum=`queryMsgNum $subCReMsgPath $msg $subCReRecieved $subCReNum`
-       msg="===============第${k}次统计收到消息总数为${totalMsgNum}==============="
+       msg="======第${k}次统计收到消息总数为${totalMsgNum}======"
        reportLog $subCReMsgAllPath $msg
 
-       msg="===============取消订阅后第${k}次查询订阅情况===================="
+       msg="====================取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $subCReSessionPath
-       spent=`expr $k \* \( $subCReGap + $subCReWait \)`
-  done
-  stopSpecScript
-  stopSubRemote
-  if $localPcFlag;then
+       spent=`expr $k \* $subCReGap`
+ done
+ stopSubRemote
+ if $localPcFlag;then
       stopSub
-  fi  
+      stopSpecScript
+ fi  
 }
 
 #testcase 7
@@ -286,8 +290,8 @@ subCReContinue(){
 subCa(){
    sumPro1=0
    subSes1=0
-   local logDir="${reportsPath}/subCa/subCaRecords"
-   local logDirRemote="${remoteReportsDir}/subCa/subCaRecords"
+   logDir="${cuPath}/subCaRecords"
+   logDirRemote="${remote_dir}/subCaRecords"
    local expTotalNum=0
    subCaAuthQuRemote
    if $localPcFlag;then
@@ -300,8 +304,8 @@ subCa(){
 
    for ip in ${ip_array[*]}
    do
-	ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subCa"   
-	ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subCa $srv_ip $caPort"   
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subprocess ${logDirRemote} subCa"   
+		ssh -p $sshPort $rootusr@$ip "${remote_query} subsession ${logDirRemote} subCa $srv_ip $caPort"   
    done
    sumProAll=`expr $proNum1 + $sumPro1`
    sumSesAll=`expr $sesNum1 + $sumSes1`
@@ -326,11 +330,11 @@ subCa(){
    local sleepTimes=0
    while [ "$sleepTimes" -le "$subCaQueryTime" ]
    do
-	sleep $subCaGapTime 
+	sleep $subCaGap 
         ((x++))
         local msg="============================================================="
         reportLog $reportPath $msg
-        sleepTimes=`expr $subCaGapTime \* $x`
+        sleepTimes=`expr $subCaGap \* $x`
         queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
      	queryRemote $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
 
@@ -353,18 +357,17 @@ subCa(){
    	reportLog $reportPath $rs
    done
  
-   stopSpecScript
    stopSubRemote
    if $localPcFlag;then
        	stopSub
        	sleep $waitForSession
+       	stopSpecScript
    fi
 }
-
 #testcase 11
 #订阅单个主题，推送大量消息
 subCaATopic(){
-  local subCaLogPath=$reportsPath/subCaATopic/subCaATopicMsgLogs/
+  local subCaLogPath=$sPath/subCaATopicMsgLogs/
   nulog=${sPath}/${pubCaATopicFName}
   : > $nulog
   subCaTopic
@@ -391,8 +394,8 @@ subCaATopic(){
 #testcase 9
 #不同客户端订阅不同主题并发布不同主题的消息
 subPubCCa(){
-  subCCaSessionLog=$reportsPath/subPubCCa/subPubCCaSessionLogs/
-  subCCaMsgLog=$reportsPath/subPubCCa/subPubCCaMsgLogs/
+  subCCaSessionLog=$sPath/subCCaSessionLogs/
+  subCCaMsgLog=$sPath/subCCaMsgLogs/
   local p=1
   local length=0
   local expTotalNum=$subCCaNum
@@ -490,18 +493,18 @@ subPubCCa(){
     queryMsgNum $subCCaMsgLog $msg $subCCaRecieved $subCCaNum
     ((p++))
   done 
-  stopSpecScript
-  sleep $waitForSession
   if [ "$length" -ne "0" ];then
  	stopSubRemote
   fi
   stopSub
+  sleep $waitForSession
+  stopSpecScript
 }
 
 #testcase 10
 subPubCaCon(){
-  subCaConSessionLog=$reportsPath/subPubCaCon/subPubCaConSessionLogs/
-  subCaConMsgLog=$reportsPath/subPubCaCon/subPubCaConMsgLogs/
+  subCaConSessionLog=$sPath/subPubCaConSessionLogs/
+  subCaConMsgLog=$sPath/subPubCaConMsgLogs/
   local p=1
   local length=0
   local expTotalNum=$subCaConNum
@@ -572,17 +575,17 @@ subPubCaCon(){
     ((p++))
   done
 
-  stopSpecScript
   if [ "$length" -ne "0" ];then
         stopSubRemote
   fi
   stopSub
+  sleep $waitForSession
+  stopSpecScript
 }
 
-#testcase 8
 subPubCaMu(){
-  subPubCaMuSessionLog=$reportsPath/subPubCaMu/subPubCaMuSessionLogs/
-  subPubCaMuMsgLog=$reportsPath/subPubCaMu/subPubCaMuMsgLogs/
+  subPubCaMuSessionLog=$sPath/subPubCaMuSessionLogs/
+  subPubCaMuMsgLog=$sPath/subPubCaMuMsgLogs/
   local p=1
   local length=0
   #单台PC会话数
@@ -595,16 +598,13 @@ subPubCaMu(){
      length=${#ip_array[*]}
   fi
 
-  #远程订阅
   if [ "$length" -ne "0" ];then
-      subCaMuRemote $subCaMuTopicPre $subCaMuCIDPre $pubCaMuIDPre $pubCaMuMsgPre
+      subCaMuRemote $subCaMuTopicSNum $subCaMuTopicNum
       expTotalNum=`expr \( $length + 1 \) \*  $expProNum`
   fi
-  #本地订阅
   subCaMu
   sleep $subCaMuWait
  
-  #查询订阅情况
   if [ "$length" -ne "0" ];then
      queryRemote $subPubCaMuSessionLog $subCaMuFName $expProNum $srv_ip $caPort
   fi
@@ -630,7 +630,6 @@ subPubCaMu(){
   reportLog $subPubCaMuSessionLog $rs
   ####################################################################
 
-  #发布消息
   if [ "$length" -ne "0" ];then
     pubCaMuAccRemote
   fi
@@ -659,10 +658,10 @@ subPubCaMu(){
     ((p++))
   done
 
-  stopSpecScript
   if [ "$length" -ne "0" ];then
         stopSubRemote
   fi
   stopSub
   sleep $waitForSession
+  stopSpecScript
 }

@@ -3,14 +3,15 @@
 #date:2016-12-02
 #add mqtt usr passwd
 sPath=`dirname $0`
-source $sPath/mqtt.conf
-accBegin=$1
-#当accEnd为0时只创建一个redis账户
-accEnd=$2
-clientIDPre=$3
-accFileName=$4
-#redisPort=6379
-#redisSrvIP=192.168.10.99
+#source $sPath/mqtt.conf
+accBegin=1
+accEnd=100
+clientIDPre=mosquitto
+accFileName=redis_liucaiping
+redisPort=6379
+redisSrvIP=192.168.10.99
+defaultUsr="mqttclient"
+defaultPasswd="mqttclient"
 redisSet(){
      redisID=$1
      #中括号中判断变量一定要加引号
@@ -31,8 +32,7 @@ redisSet(){
      else
        redisIndex=$4
      fi
-     #redisData=`echo "set UIDPWD:$redisID;$redisUsr;$redisPasswd $redisIndex"`
-     redisData=`echo "hmset CINFO:$redisID USER $redisUsr PASSWD $redisPasswd"`
+     redisData=`echo "set UIDPWD:$redisID;$redisUsr;$redisPasswd $redisIndex"`
      echo ${redisData} 
 }
 
@@ -41,7 +41,6 @@ redisAcc(){
   accLog=${accFile}.log
   :>$accFile
   :>$accLog
-  #当accEnd为0时只创建一个redis账户
   if [ "$accEnd" = 0 ];then
             echo `redisSet $clientIDPre`>>$accFile
   else
