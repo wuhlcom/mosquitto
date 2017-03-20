@@ -42,25 +42,25 @@ case $1 in
      subAll
      sleep $tcGap
      subAllContinue    
-     sleep $tcGap
-     subCContinue
-     sleep $tcGap
-     subFixAll
-     sleep $tcGap
-     subCPubR
-     sleep $tcGap
-     subCa
-     sleep $tcGap
-     subPubCaMu
-     sleep $tcGap
-     subPubCCa
-     sleep $tcGap
-     subCaATopic
-     sleep $tcGap
-     subPubCaCon
-     sleep $tcGap
-     subCReContinue
-   ;;
+     #sleep $tcGap
+     #subCContinue
+     #sleep $tcGap
+     #subFixAll
+     #sleep $tcGap
+     #subCPubR
+     #sleep $tcGap
+     #subCa
+     #sleep $tcGap
+     #subPubCaMu
+     #sleep $tcGap
+     #subPubCCa
+     #sleep $tcGap
+     #subCaATopic
+     #sleep $tcGap
+     #subPubCaCon
+     #sleep $tcGap
+     #subCReContinue
+     ;;
    *)
     echo "Parameters error!Please check!"
     ;;

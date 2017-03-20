@@ -149,7 +149,7 @@ subFixAll(){
         local subFixMsgLogPath=$reportsPath/subFixAll/subFixAllMsgLogs/
 	local count=1
         local realNum=0
-        lcoal skipTime=0
+        local skipTime=0
         subFixRemote&
         if $localPcFlag;then
                 subFixLocal
@@ -365,7 +365,7 @@ subCa(){
 #订阅单个主题，推送大量消息
 subCaATopic(){
   local subCaLogPath=$reportsPath/subCaATopic/subCaATopicMsgLogs/
-  nulog=${sPath}/${pubCaATopicFName}
+  nulog=${recordsPath}/${pubCaATopicFName}
   : > $nulog
   subCaTopic
   createAccount $pubCaATopicIDPre  $pubCaATopicSNum $pubCaATopicENum "${intf}-${cIP}-pubCaATopic"
@@ -554,7 +554,7 @@ subPubCaCon(){
   while [ "$p" -le "$subPubCaConTimes" ]
   do
     #清除旧的消息
-    : > $sPath/$subCaConRecieved
+    : > $recordsPath/$subCaConRecieved
     if [ "$length" -ne "0" ];then
        ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaConRecieved}"
     fi
@@ -641,7 +641,7 @@ subPubCaMu(){
   while [ "$p" -le "$subPubCaMuTimes" ]
   do
     #清除旧的消息
-    : > $sPath/$subCaMuRecieved
+    : > $recordsPath/$subCaMuRecieved
     if [ "$length" -ne "0" ];then
        ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaMuRecieved}"
     fi

@@ -127,7 +127,8 @@ queryLocal(){
    i=0
    while true
    do
-     subRsNum=`cat "${sPath}/${fileName}"`
+#     subRsNum=`cat "${sPath}/${fileName}"`
+     subRsNum=`cat "${recordsPath}/${fileName}"`
      #订阅完成则查询订阅结果
      if [ "$subRsNum" = "$exprNum" ];then
        subRs=$(${local_query} ${subRsCMD} $srvIP $srvPort)
@@ -202,7 +203,8 @@ queryRemote(){
     if [ "$ip" = "$localPcIP" ];then continue;fi
     while true
     do
-      subRsNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+      #subRsNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+      subRsNum=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${fileName}"`
       #pcSubNum=`echo $subResult|awk -F " " '{print $3}'`
       #订阅完成则查询订阅结果
       if [ "$subRsNum" = "$exprNum" ];then
@@ -359,7 +361,7 @@ queryFixMsgNum(){
         subMsgRs=0
         
         if $localPcFlag;then 
-          subMsgRs=`cat ${sPath}/${fileName}|wc -l`
+          subMsgRs=`cat ${recordsPath}/${fileName}|wc -l`
           message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
           reportLog $reportPath $message
           sum=`expr $sum + $subMsgRs`
@@ -367,7 +369,7 @@ queryFixMsgNum(){
  
         for ip in ${ip_array[*]}
         do
-	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
+	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsdir}/${fileName}|wc -l"`
              message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
              reportLog $reportPath $message 
              sum=`expr $sum + $subMsgRs`
@@ -420,15 +422,15 @@ subPubLocal(){
 
 #local pc sub pub query
 subPubQuLocal(){
-    subPubPath=$sPath/subPubSessionLogs/
-    subPubMsgPath=$sPath/subPubMsgLogs/
+    subPubPath=$reportsPath/subPubSessionLogs/
+    subPubMsgPath=$reportsPath/subPubMsgLogs/
     session_num=0
     query_num=1
     subRecieved=""
     sleep $waitForSession
     while true
     do
-       	session_num=`cat ${sPath}/${subPubRecieved}|wc -l`
+       	session_num=`cat ${recordsPath}/${subPubRecieved}|wc -l`
        	if [ "$session_num" = "$sub_pub_num" ];then
 	    subRs=$(${local_query} ${subRsCMD})
             subRecieved="执行PC${localPcIP}预期订阅/发布总数为$sub_pub_num,实际数量为$session_num"
@@ -484,8 +486,8 @@ subPubRemote(){
 
 #query remote pc sub pub
 subPubQuRemote(){
-        subPubPath=$sPath/subPubSessionLogs/
-        subPubMsgPath=$sPath/subPubMsgLogs/
+        subPubPath=$reportsPath/subPubSessionLogs/
+        subPubMsgPath=$reportsPath/subPubMsgLogs/
 	sum=0
 	for ip in ${ip_array[*]}  
 	do
@@ -497,7 +499,7 @@ subPubQuRemote(){
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
   	    while true
 	    do
-           	session_num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRecieved}|wc -l"`
+           	session_num=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${subPubRecieved}|wc -l"`
             	if [ "$session_num" = "$sub_pub_num" ];then
            	        subRsRemote=`ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}"`
 		        subRecievedR="远程PC${ip}预期订阅/发布数为$sub_pub_num,实际数量为$num"
@@ -551,14 +553,14 @@ retainLocal(){
 
 #local pub retain,then sub them
 retainQuLocal(){
-        reportPath=$sPath/pubRMsgLogs/
+        reportPath=$reportsPath/pubRMsgLogs/
 	num=0
         queryNum=1
         retainRs=""
   	sleep $waitForSession 
   	while true
         do
-           	num=`cat ${sPath}/${subPubRRecieved}|wc -l`
+           	num=`cat ${recordsPath}/${subPubRRecieved}|wc -l`
 	        if [ "$pubRNum" =  "$num" ];then
 		        retainRs="执行PC${localPcIP}预期订阅到保留消息数为$pubRNum,实际数量为$num"
     		        break 
@@ -604,7 +606,7 @@ retainRemote(){
 #remote pub retain,then sub them
 retainQuRemote(){
         #retainQuLocal保持一致
-        reportPath=$sPath/pubRMsgLogs/
+        reportPath=$reportsPath/pubRMsgLogs/
 	sum=0
 	for ip in ${ip_array[*]}  
 	do
@@ -614,7 +616,7 @@ retainQuRemote(){
 	    if [ "$ip" = "$localPcIP" ];then continue;fi
   	    while true
 	    do
-           	num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subPubRRecieved}|wc -l"`
+           	num=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${subPubRRecieved}|wc -l"`
             	if [ "$num" = "$pubRNum" ];then
 		        retainRsR="远程PC${ip}预期订阅到保留消息数为$pubRNum,实际数量为$num"
     		        break 
@@ -679,7 +681,7 @@ subCQuLocal(){
   i=0
   while true
   do
-	subCnumber=`cat "${sPath}/${subCFName}"`
+	subCnumber=`cat "${recordsPath}/${subCFName}"`
 	if [ "$subCnumber" = "$subCNum" ];then
 	   subCRs=$(${local_query} $subRsCMD)
 	   break
@@ -730,7 +732,7 @@ subCNoAccRemote(){
 #远程一性订阅查询
 subCQuRemote(){
    #与subCQuLocal保持一致
-   reportPath=$sPath/subCSessionLogs/
+   reportPath=$reportsPath/subCSessionLogs/
    sumPro=0
    sumSes=0
    for ip in ${ip_array[*]}
@@ -741,7 +743,7 @@ subCQuRemote(){
      while true
      do
 		sleep $waitForSession
-                num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCFName}"`
+                num=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${subCFName}"`
                 if [ "$num" = "$subCNum" ];then
 			subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
                         break
@@ -811,7 +813,7 @@ subCQuContinue(){
      while true
      do
                 sleep $waitForSession
-                num=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}"`
+                num=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${fileName}"`
                 if [ "$num" = "$expect" ];then
                         subCRsR=$(ssh -p $sshPort $rootusr@$ip "${remote_query} ${subRsCMD}")
                         break					
@@ -842,7 +844,7 @@ subCQuContinue(){
       i=0
       while true
       do
-        subCnumber=`cat "${sPath}/${fileName}"`
+        subCnumber=`cat "${recordsPath}/${fileName}"`
         if [ "$subCnumber" = "$expect" ];then
            subCRs=$(${local_query} $subRsCMD)
            break
@@ -1051,7 +1053,7 @@ queryMsgNum(){
         local subMsgRs=""
         reportLog $reportPath $msg 
         if $localPcFlag;then 
-            subMsgRs=`cat ${sPath}/${fileName}|wc -l`
+            subMsgRs=`cat ${recordsPath}/${fileName}|wc -l`
             local message="查询本地PC-${localPcIP}当前订阅到的消息数为$subMsgRs"
             reportLog $reportPath $message
             sum=`expr $sum + $subMsgRs`
@@ -1060,7 +1062,7 @@ queryMsgNum(){
  
         for ip in ${ip_array[*]}
         do
-	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${fileName}|wc -l"`
+	     subMsgRs=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${fileName}|wc -l"`
              local message="查询远程PC-${ip}当前订阅到的消息数为$subMsgRs"
              reportLog $reportPath $message 
              sum=`expr $sum + $subMsgRs`
@@ -1127,13 +1129,13 @@ queryPubRLocal(){
     while true
     do
       sleep $waitForSession
-      local  pubrNum=`cat ${sPath}/${pubRFName}`
+      local  pubrNum=`cat ${recordsPath}/${pubRFName}`
       if [ "$pubrNum" = "$pubRNum" ];then
          break
       fi
       
       if [ "$i" = "$querySubCount" ];then
-        pubrNum=`cat ${sPath}/${pubRFName}`  
+        pubrNum=`cat ${recordsPath}/${pubRFName}`  
         break
       fi
      ((i++))
@@ -1151,13 +1153,13 @@ queryPubRRemote(){
     while true
     do
       sleep $waitForSession
-      pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${pubRFName}"`
+      pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${pubRFName}"`
       if [ "$pubrNum" = "$pubRNum" ];then
          break
       fi
       
       if [ "$i" = "$querySubCount" ];then
-	 pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${pubRName}"`
+	 pubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${pubRName}"`
         break
       fi
       ((i++))
@@ -1185,7 +1187,7 @@ subCRetain(){
 #收到的保留消息数量
 querySubCR(){
  reportPath=$reportsPath/subCPubR/subCPubRMsgLogs/ 
- reMsg=${sPath}/${subCPubRRecieved} 
+ reMsg=${recordsPath}/${subCPubRRecieved} 
  sum=0
  expectNum=0
  if $localPcFlag;then
@@ -1216,13 +1218,13 @@ querySubCR(){
     while true
     do
       sleep $waitForSession
-      subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}|wc -l"`
+      subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${subCPubRRecieved}|wc -l"`
       if [ "$subpubrNum" = "$pubRNum" ];then
          break
       fi
       
       if [ "$i" = "$querySubCount" ];then
-	 subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remote_dir}/${subCPubRRecieved}|wc -l"`
+	 subpubrNum=`ssh -p $sshPort $rootusr@$ip "cat ${remoteRecordsDir}/${subCPubRRecieved}|wc -l"`
         break
       fi
       ((i++))

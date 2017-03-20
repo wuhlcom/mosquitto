@@ -7,6 +7,8 @@
 #
 #sPath=`pwd`
 sPath=`dirname $0`
+recordsPath=$sPath/records
+test -d $recordsPath||mkdir -p $recordsPath
 source $sPath/mqtt.conf
 source $sPath/tcpdump.sh
 echoFlag=false
@@ -85,9 +87,9 @@ subFixNoAcc(){
          cap "subFix"
    fi
    #relog收到消息保存到日志
-   relog=${sPath}/${subFixRecieved}	
+   relog=${recordsPath}/${subFixRecieved}	
    #nulog命令下发数量计数日志
-   nulog=${sPath}/${subFixFName}	
+   nulog=${recordsPath}/${subFixFName}	
    : > $relog	
    : > $nulog	
    j=0
@@ -121,7 +123,8 @@ subLoopNoAcc(){
 	fi
           
 	j=0
-	nulog=${sPath}/${subFName}
+	#nulog=${sPath}/${subFName}
+	nulog=${recordsPath}/${subFName}
 	: > $nulog
         #create mqtt usr passwd
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
@@ -165,8 +168,8 @@ subCaNoAcc(){
   fi
   if $capFlag;then cap "subCa";fi
   #relog收到消息保存到日志
-  relog=${sPath}/${subCaRecieved}
-  nulog=${sPath}/${subCaFName}
+  relog=${recordsPath}/${subCaRecieved}
+  nulog=${recordsPath}/${subCaFName}
   : > $nulog
   : > $relog
   for i in `seq $subCaSNum $subCaENum`
@@ -250,8 +253,8 @@ subCLoopNoAcc(){
         echoFlag=false
 
         j=0
-        relog=${sPath}/${subCRecieved}
-        nulog=${sPath}/${subCFName}
+        relog=${recordsPath}/${subCRecieved}
+        nulog=${recordsPath}/${subCFName}
         : > $relog
         for i in `seq $subCsNum $subCeNum`
         do
@@ -280,8 +283,8 @@ subCReLoopNoAcc(){
         #fi
 
         j=0
-        relog=$sPath/$subCReRecieved
-        nulog=${sPath}/${subCReFName}
+        relog=${recordsPath}/${subCReRecieved}
+        nulog=${recordsPath}/${subCReFName}
         : > $relog
         for i in `seq $subCResNum $subCReeNum`
         do
@@ -305,8 +308,8 @@ subCReLoop(){
 subCRNoAcc(){
         echoFlag=false
         j=0
-        relog=${sPath}/${subCPubRRecieved}
-        nulog=${sPath}/${subRFName}
+        relog=${recordsPath}/${subCPubRRecieved}
+        nulog=${recordsPath}/${subRFName}
         : > $relog
         : > $nulog
         for i in `seq $pubRsNum $pubReNum`
@@ -331,8 +334,8 @@ subCRLoop(){
 #证书认证方式单次订阅
 subCCaNoAcc(){
 	echoFlag=false
-        local relog=${sPath}/${subCCaRecieved}
-        local nulog=${sPath}/${subCCaFName}
+        local relog=${recordsPath}/${subCCaRecieved}
+        local nulog=${recordsPath}/${subCCaFName}
         : > $relog
         : > $nulog
         for i in `seq $subCCaSNum $subCCaENum`
@@ -352,7 +355,7 @@ subCCa(){
 
 #证书认证方式发布消息给证书认证方式的单次订阅
 pubCCaNoAcc(){
-        local nulog=${sPath}/${pubCCaFName}
+        local nulog=${recordsPath}/${pubCCaFName}
 	: > $nulog
         for i in `seq $subCCaSNum $subCCaENum`
  	do
@@ -374,8 +377,8 @@ pubCCa(){
 #证书认证方式订阅不同主题
 subCaConNoAcc(){
         echoFlag=false
-        local relog=${sPath}/${subCaConRecieved}
-        local nulog=${sPath}/${subCaConFName}
+        local relog=${recordsPath}/${subCaConRecieved}
+        local nulog=${recordsPath}/${subCaConFName}
         : > $relog
         : > $nulog
         for i in `seq $subCaConSNum $subCaConENum`
@@ -395,7 +398,7 @@ subCaCon(){
 
 #证书认证方式发布消息给证书认证方式的单次订阅
 pubCaConNoAcc(){
-        local nulog=${sPath}/${pubCaConFName}
+        local nulog=${recordsPath}/${pubCaConFName}
         : > $nulog
         for i in `seq $subCaConSNum $subCaConENum`
         do
@@ -552,7 +555,7 @@ subPubNoAcc(){
 	#fi
  
 	j=0
-	relog=$sPath/${subPubRecieved}
+	relog=$recordsPath/${subPubRecieved}
 	: > $relog
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubSubSNum $pubSubENum $subIDPre ${intf}-${cIP}-pubsub"
 	for i in `seq $pubSubSNum $pubSubENum`
@@ -608,7 +611,7 @@ pubR(){
 #plenty of mqtt pub retain msg
 pubRLoopNoAcc(){
      # ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-pubR"
-      nulog=$sPath/$pubRFName
+      nulog=$recordsPath/$pubRFName
       for i in `seq $pubRsNum $pubReNum`
       do
     	pubRTopic="${pubRTopicPre}${i}"
@@ -732,8 +735,8 @@ stopSubPubR(){
 #一台机器上订阅多个主题
 #且一个主题有多个客户端同时订阅
 subCaMu(){
- local relog=${sPath}/$subCaMuRecieved
- local nulog=${sPath}/$subCaMuFName
+ local relog=${recordsPath}/$subCaMuRecieved
+ local nulog=${recordsPath}/$subCaMuFName
  local clientNum=0 
  : > $relog
  : > $nulog
@@ -769,7 +772,7 @@ pubCaMuAcc(){
 
 #发布消息
 pubCaMuNoAcc(){
- 	local nulog=${sPath}/${pubCaMuFName}
+ 	local nulog=${recordsPath}/${pubCaMuFName}
 	: > $nulog
         for i in `seq $subCaMuTopicSNum $subCaMuTopicENum`
         do
