@@ -28,7 +28,7 @@ sub(){
          passwd=$4
          subqos=$5
          msglog=$6
-#        if $echoFlag;then
+#        if [ "$echoFlag" = "true" ];then
 #                 echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
  #       fi
         if [ -z "$msglog" ];then
@@ -53,7 +53,7 @@ sub(){
        if [ -n "$3" ];then
           subqos=$3
           msglog=$4
-          if $echoFlag;then
+          if [ "$echoFlag" = "true" ];then
                  echo client  \'$subid\' sub topic \'$subtopic\' qos \'$subqos\'
           fi
           if [ -z "$msglog" ];then
@@ -62,7 +62,7 @@ sub(){
              mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive >> $msglog&
           fi
        else
-         if $echoFlag;then
+         if [ "$echoFlag" = "true"];then
            echo client  \'$subid\' sub topic \'$subtopic\'
          fi
          mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -i $subid -k $keepLive&
@@ -72,10 +72,10 @@ sub(){
 
 createAccount(){
    if $mqttAuth;then
-    IDPre=$1
-    SNum=$2
-    ENum=$3
-    FName=$4
+    local IDPre=$1
+    local SNum=$2
+    local ENum=$3
+    local FName=$4
     ssh $rootusr@$redisSrvIP "${remote_dir}/mqttAuth.sh $SNum $ENum $IDPre $FName"
    fi
 }
@@ -83,13 +83,13 @@ createAccount(){
 #订阅相同主题
 subFixNoAcc(){
    echoFlag=false
-   if $capFlag;then
+   if [ "$subFixCapFlag" = "true" ]; then
          cap "subFix"
    fi
    #relog收到消息保存到日志
-   relog=${recordsPath}/${subFixRecieved}	
+   local relog=${recordsPath}/${subFixRecieved}	
    #nulog命令下发数量计数日志
-   nulog=${recordsPath}/${subFixFName}	
+   local nulog=${recordsPath}/${subFixFName}	
    : > $relog	
    : > $nulog	
    j=0
@@ -107,6 +107,7 @@ subFixNoAcc(){
       fi
       echo `expr $i - $subFixSNum + 1` > $nulog	
    done
+  if [ "$subFixCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 #创建账户并订阅相同主题
@@ -118,7 +119,7 @@ subFix(){
 #订阅不同主题
 #mosquitto_sub
 subLoopNoAcc(){
-	if $capFlag;then
+	if [ "$subLoopCapFlag" = "true" ];then
 	 cap "subLoop"
 	fi
           
@@ -126,26 +127,24 @@ subLoopNoAcc(){
 	#nulog=${sPath}/${subFName}
 	nulog=${recordsPath}/${subFName}
 	: > $nulog
-        #create mqtt usr passwd
-	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $sSubNum $eSubNum $subIDPre ${intf}-${cIP}-sub"
 	for i in `seq $sSubNum $eSubNum`
 	do	
 	 subTopic="${subTopicPre}${i}"
 	 subID="${subIDPre}${i}"
-                if $mqttAuth;then
-		   		sub $subTopic $subID $defaultUsr $defaultPasswd $j
-  		else
-				sub $subTopic $subID $j
-  		fi
-		j=`expr $j + 1`
-                if [ $j -ge 3 ]; then
-                         j=0
-                fi
-	        #echo `date +"%Y-%m-%d %H:%M:%S"`>${sPath}/${subFName}
-	       	echo `expr $i - $sSubNum + 1` > $nulog	
+         if $mqttAuth;then
+	   sub $subTopic $subID $defaultUsr $defaultPasswd $j
+         else
+	   sub $subTopic $subID $j
+  	 fi
+	 j=`expr $j + 1`
+         if [ $j -ge 3 ]; then
+             j=0
+         fi
+	 echo `expr $i - $sSubNum + 1` > $nulog	
 	done
 	#monitorLog subresult&
 	$sPath/logger.sh monitorlog&
+       if [ "$subLoopCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 #创建用户并订阅不同主题
@@ -166,19 +165,20 @@ subCaNoAcc(){
   else
   	local subQos=$2
   fi
-  if $capFlag;then cap "subCa";fi
+  if [ "$subCaCapFlag" = "true" ];then cap "subCa";fi
   #relog收到消息保存到日志
-  relog=${recordsPath}/${subCaRecieved}
-  nulog=${recordsPath}/${subCaFName}
+  local relog=${recordsPath}/${subCaRecieved}
+  local nulog=${recordsPath}/${subCaFName}
   : > $nulog
   : > $relog
   for i in `seq $subCaSNum $subCaENum`
   do
-      subCaTopic="${subCaTopicPre}${i}"
-      subCaID="${subCaIDPre}${i}"
-      sub $subCaTopic $subCaID $defaultUsr $defaultPasswd $subQos $relog $subAuType 
+      local subCaTopicName="${subCaTopicPre}${i}"
+      local subCaID="${subCaIDPre}${i}"
+      sub $subCaTopicName $subCaID $defaultUsr $defaultPasswd $subQos $relog $subAuType 
   done
   echo `expr $i - $subCaSNum + 1` > $nulog	
+  if [ "$subCaCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 #使用证书认证订阅不同主题
@@ -193,9 +193,10 @@ subCaAuth(){
   else
   	local subQos=$2
   fi
-  if $capFlag;then cap "subCa";fi
+  if [ "$subCaAuthCapFlag" = "true" ];then cap "subCa";fi
   createAccount $subCaIDPre $subCaSNum $subCaENum "${intf}-${cIP}-subCa" 
   subCaNoAcc $subAuType $subQos 
+  if [ "$subCaAuthCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 #一次性订阅
@@ -222,7 +223,7 @@ subC(){
          subAuType=$8
        fi
 
-       if $echoFlag;then
+       if [ "$echoFlag" = "true" ];then
             echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\'
        fi
       
@@ -278,7 +279,7 @@ subCLoop(){
 #一次性订阅同一主题的消息用于长期测试
 subCReLoopNoAcc(){
         echoFlag=false
-        #if $capFlag;then
+        #if [ "$subCReLoopCapFlag" = "true" ];then
          # cap "subCReContinue"
         #fi
 
@@ -297,6 +298,7 @@ subCReLoopNoAcc(){
                 :>$nulog
                 echo `expr $i - $subCResNum + 1` >> $nulog
         done
+       if [ "$subCAReLoopCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 subCReLoop(){
@@ -547,12 +549,16 @@ stopSub(){
  	  pkill -9 tcpdump
 }
 
+stopTcpdump(){
+ stopScript "tcpdump"
+}
 #先订阅后发布，主题保持不变
 subPubNoAcc(){
 	echoFlag=false
-	#if $capFlag;then
-	# cap "subPub"
-	#fi
+        #capFlag=true
+	if [ "$subPubCapFlag" = "true" ];then
+	 cap "subPub"
+	fi
  
 	j=0
 	relog=$recordsPath/${subPubRecieved}
@@ -560,32 +566,33 @@ subPubNoAcc(){
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubSubSNum $pubSubENum $subIDPre ${intf}-${cIP}-pubsub"
 	for i in `seq $pubSubSNum $pubSubENum`
 	do	
-			subID="$subIDPre$i"
-			if $mqttAuth;then
-			  sub $subPubTopic $subID $defaultUsr $defaultPasswd $j $relog
-			else
-			  sub $subPubTopic $sid $j $relog
-			fi
-			j=`expr $j + 1`
-                        if [ $j -ge 3 ]; then
-                               j=0
-                        fi
+           subID="$subIDPre$i"
+	   if $mqttAuth;then
+	     sub $subPubTopic $subID $defaultUsr $defaultPasswd $j $relog
+	   else
+	     sub $subPubTopic $sid $j $relog
+	   fi
+
+	   j=`expr $j + 1`
+           if [ $j -ge 3 ]; then
+              j=0
+           fi
 	done
-	        
 	sleep $subPubGap 
         	
 	#发布消息的序列可以与订阅的序列不一样
 	#ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $subPubSNum $subPubENum $pubIDPre ${intf}-${cIP}-subpub"
 	for i in `seq $subPubSNum $subPubENum`
 	do
-			pubID="$pubIDPre$i"
-			pubMsg="$pubMsgPre$i"
-			if $mqttAuth;then
-			  pub $subPubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
- 			else
-		          pub $subPubTopic $msg $pid $pubQos
-			fi
+ 	   pubID="$pubIDPre$i"
+	   pubMsg="$pubMsgPre$i"
+	   if $mqttAuth;then
+	      pub $subPubTopic $pubMsg $pubID $pubQos $defaultUsr $defaultPasswd
+ 	   else
+	      pub $subPubTopic $msg $pid $pubQos
+	   fi
        done
+       if [ "$subPubCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 subPub(){
@@ -635,7 +642,7 @@ pubRLoop(){
 #mosquitto_sub retain msg
 subRLoopNoAcc(){
 	echoFlag=false
-	#if $capFlag;then
+	#if [ "$subRLoopCapFlag" = "true" ];then
 	# cap "subRLoop"
 	#fi
 
@@ -672,11 +679,10 @@ subPubRNoAcc(){
   : > $relog
   j=0
  
-  #if $capFlag;then
+  #if [ "$subPubRCapFlag" = "true"];then
    # cap "subPubR"
   #fi
   
-  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $pubRIDPre ${intf}-${cIP}-subpubR"
   for i in `seq $pubRsNum $pubReNum`
   do
 	    pubRTopic="${pubRTopicPre}${i}"
@@ -689,7 +695,6 @@ subPubRNoAcc(){
            fi 
   done
   sleep $retainGap 
-  #ssh $rootusr@$srv_ip "${remote_dir}/mqttAuth.sh $pubRsNum $pubReNum $subRIDPre ${intf}-${cIP}-pubsubR"
   for i in `seq $pubRsNum $pubReNum`
   do	
             pubRTopic="${pubRTopicPre}${i}"
@@ -705,6 +710,7 @@ subPubRNoAcc(){
 	    fi
   done
   $sPath/logger.sh monitorlog&
+  if [ "$subPubRCapFlag" = "true" ];then stopTcpdump; fi
 }
 
 subPubR(){
@@ -792,11 +798,14 @@ pubCaMu(){
 
 #订阅单个主题，发送大量消息
 subCaTopic(){
-    if $subCaATopicCap;then cap "subCaATopic";fi
+    local relog=${recordsPath}/${subCaATopicRecieved}
+    if [ "$subCaATopicCapFlag" = "true" ];then cap "subCaATopic";fi
     createAccount $subCaATopicID 1 0 "${intf}-${cIP}-subATopic" 
-    : > $subCaATopicRecieved 
-    sub $subCaATopic $subCaATopicID $defaultUsr $defaultPasswd $subCaATopicQos $subCaATopicRecieved $auType
+    : > $relog
+    sub $subCaATopic $subCaATopicID $defaultUsr $defaultPasswd $subCaATopicQos $relog $auType
+    if [ "$subCaATopicCapFlag" = "true" ];then stopTcpdump; fi
 }
+
 case $1 in
    "subloop")
      subLoop

@@ -300,7 +300,7 @@ monitorLog(){
 	  s_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
 	  if [ "$p_num" -eq 0 ] ||[ "$s_num" -eq 0 ]; then
 	    msg="mqtt client process num $p_num,session number $s_num,stop logger"
-	    writeLog $msg
+	    writeLog "${msg}"
  	    break
 	  fi
 	  sleep $logGap
@@ -315,7 +315,7 @@ sMonitorLog(){
           srv_session=$(netstat -apnt|grep "$srv_ip:$srv_port\|$client_ip"|grep ESTABLISHED|wc -l)
 	  if [ "$srv_session" -eq 0 ]; then
 	    msg="server session number $srv_session,stop logger"
-	    writeLog $msg
+	    writeLog "${msg}"
  	    break
 	  fi
 	  sleep $logGap

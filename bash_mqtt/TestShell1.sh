@@ -5,14 +5,22 @@
 #fun2&
 #stopScript
 
-
-fun(){
- a=$1
- b=$2
-x=6666
-echo "I am here"
-echo "He is here"
-return $x
+str(){
+ local s="wa li"
+ echo "${s}"
 }
 
-fun
+testStr(){
+ local str1=$1
+ echo my value is $str1 
+}
+#s=`str`
+#echo $s
+#testStr "$s"
+a=false
+if [ "$a" = "true" ]; then
+  echo $a
+  echo a is not null
+else
+  echo a is null
+fi

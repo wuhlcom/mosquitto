@@ -249,7 +249,8 @@ subCReContinue(){
   reportLog $subCReMsgAllPath $msg
 
   #后续调用不再创建账户
-  while [ "$spent" -le "$subCReTime" ]
+  #while [ "$spent" -le "$subCReTime" ]
+  while [ "$k" -le "$subCReTimes" ]
   do
       ((k++))
        #远程订阅
@@ -272,7 +273,7 @@ subCReContinue(){
 
        msg="===============取消订阅后第${k}次查询订阅情况===================="
        unsubCQuContinue $msg $subCReSessionPath
-       spent=`expr $k \* \( $subCReGap + $subCReWait \)`
+  #    spent=`expr $k \* \( $subCReGap + $subCReWait \)`
   done
   stopSpecScript
   stopSubRemote
@@ -320,7 +321,7 @@ subCa(){
        	value=`expr $expTotalNum - $sumSesAll`
        	rs="预期订阅总session数为$expTotalNum,实际数量为$sumSesAll,相差${value}"
    fi
-   reportLog $reportPath $rs
+   reportLog "${reportPath}" "${rs}"
    
    local x=1
    local sleepTimes=0
@@ -329,7 +330,7 @@ subCa(){
 	sleep $subCaGapTime 
         ((x++))
         local msg="============================================================="
-        reportLog $reportPath $msg
+        reportLog "${reportPath}" "${msg}"
         sleepTimes=`expr $subCaGapTime \* $x`
         queryLocal $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort
      	queryRemote $subCaLogPath $subCaFName $subCaNum $srv_ip $caPort

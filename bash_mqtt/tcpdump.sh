@@ -14,45 +14,45 @@
 cap(){
 
 if [ -n "$1" ];then
-        captureFile=$1
+       local captureFile=$1
 else
-        captureFile=$capFile
+       local captureFile=$capFile
 fi
 
 if [ -n "$2" ];then
-        capturePath=$2
+       local capturePath=$2
 else
-        capturePath=$capPath
+       local capturePath=$capPath
 fi
 
 if [ -n "$3" ];then
-        fileSize=$3
+       local fileSize=$3
 else
-        fileSize=$capFileSize
+       local fileSize=$capFileSize
 fi
 
 if [ -n "$4" ];then
-        fileNum=$4
+       local fileNum=$4
 else
-        fileNum=$capFileNum
+       local fileNum=$capFileNum
 fi
 
 if [ -n "$5" ];then
-        interface=$5
+       local interface=$5
 else
-        interface=$intf
+       local interface=$intf
 fi
 
 if [ -n "$6" ];then
-        tcpPort=$6
+       local tcpPort=$6
 else
-        tcpPort=$filterPort
+       local tcpPort=$filterPort
 fi
 
 captureFile="${captureFile}_${intf}_${cIP}.pcapng"
 test -d $capPath||mkdir $capPath
-#tcpdump -i "$interface" tcp port "$tcpPort" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
-tcpdump -i "$interface" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
+tcpdump -i "$interface" tcp port "$tcpPort" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
+#tcpdump -i "$interface" -w "$capturePath$captureFile" -C "$fileSize" -W "$fileNum"&
 }
 
 

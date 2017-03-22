@@ -7,7 +7,8 @@
 sPath=`dirname $0`
 source $sPath/mqttClient.sh
 source $sPath/logger.sh
-reportsPath=$sPath/reports
+dateStr=`date "+%Y_%m_%d"`
+reportsPath=$sPath/reports/${dateStr}
 remote_mqttClient=$remote_dir/mqttClient.sh
 remote_query=$remote_dir/logger.sh
 
@@ -50,7 +51,7 @@ reportLog(){
   local logPath=$1
   if [ "$#" = 2 ];then
     local message=$2
-    writeLog $message
+    writeLog "${message}"
   else 
         ipaddr=$2
         proNum=$3
@@ -64,13 +65,13 @@ reportLog(){
         #if [ -z "$proNum" ];then 
 	#	proNum=0
 	#	nulmsg="查询到mosquitto_sub进程数为0"
-	#	writeLog $nulmsg
+	#	writeLog "${nulmsg}"
 	#fi
         
 	#if [ -z "$sesNum" ];then 
 	#	sesNum=0
 	#	nulmsg="查询到mosquitto_sub会话数为0"
-	#	writeLog $nulmsg
+	#	writeLog "${nulmsg}"
 	#fi
 	#不能有空格，有空格会当成多个变量的值
 	total="Client_$ipaddr:预期${client_type}数为${expect}个，实际进程数${proNum}个，会话数${sesNum}"
@@ -92,9 +93,9 @@ reportLog(){
 	   proRs="Client_$ipaddr:实际上有${sesNum}个${client_type}会话,多于预期的${expect}个,相差`expr $sesNum - $expect`个,有重复的client"
 	fi
 
-	writeLog $total
-	writeLog $proRs 
-	writeLog $sesRs
+	writeLog "${total}"
+	writeLog "${proRs}" 
+	writeLog "${sesRs}"
  fi
 }
 
@@ -1106,7 +1107,7 @@ reportPubLog(){
   local logPath=$1
   if [ "$#" = 2 ];then
     local message=$2
-    writeLog $message
+    writeLog "${message}"
   else
         ipaddr=$2
         pubnum=$3
@@ -1116,8 +1117,8 @@ reportPubLog(){
         if [ "$pubnum" -lt "$expect" ];then
            pubrRs="Client_$ipaddr:实际上有${pubnum}个mosquitto_pub个,少于预期的${expect}个,相差`expr $expect - $pubnum`个"
         fi
-  	writeLog $total
-  	writeLog $pubrRs
+  	writeLog "${total}"
+  	writeLog "${pubrRs}"
   fi
 }
 
@@ -1286,10 +1287,10 @@ queryMsg(){
     while true
     do
        #记录下发消息数
-       local pubCountNum=`cat "$numFile"`
+       local pubCountNum=`cat "${recordsPath}/${numFile}"`
        if [ "$pubCountNum" = "$pubNum" ];then
             #实际收到消息数
-	    msgNum=`cat ${msgFile}|wc -l`
+	    msgNum=`cat ${recordsPath}/${msgFile}|wc -l`
             if [ "$msgNum" -lt "$pubNum" ];then
                local value=`expr $pubNum - $msgNum`
                local  msg="失败:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,相差${value}条"
@@ -1307,7 +1308,7 @@ queryMsg(){
       #循环查询达到限定次数跳出循环，但仍查询一次
       if [ "$i" = 5 ];then
          #实际收到消息数
-	 msgNum=`cat ${msgFile}|wc -l`
+	 msgNum=`cat "${recordsPath}/${msgFile}"|wc -l`
          if [ "$msgNum" -lt "$pubNum" ];then
               local value=`expr $pubNum - $msgNum`
               local  msg="失败:${pcIP}发送消息数${pubNum}条,收到消息数${msgNum}条,相差${value}条"
