@@ -21,16 +21,16 @@ sub(){
       #当没有赋值$7时设置subAuType的默认值为“pw”
       if [ -z "$subAuType" ];then subAuType="pw";fi
       if [ "$subAuType" = "pw" ];then
-         if [ -z "$3" ] || [ -z "$4" ] ;then
-              echo "ERROR:Please input the mosquitto client usrname and password!"
-         fi
-         usr=$3
-         passwd=$4
-         subqos=$5
-         msglog=$6
-#        if [ "$echoFlag" = "true" ];then
-#                 echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
- #       fi
+        if [ -z "$3" ] || [ -z "$4" ] ;then
+           echo "ERROR:Please input the mosquitto client usrname and password!"
+        fi
+        usr=$3
+        passwd=$4
+        subqos=$5
+        msglog=$6
+   #    if [ "$echoFlag" = "true" ];then
+   #       echo client  \'$subid\' sub topic \'$subtopic\' usrname \'$usr\' passwd \'$passwd\' qos \'$subqos\' 
+   #    fi
         if [ -z "$msglog" ];then
           mosquitto_sub -t $subtopic -h $srv_ip -p $srv_port -q $subqos -i $subid -k $keepLive -u $usr -P $passwd&
         else
@@ -792,7 +792,7 @@ pubCaMuNoAcc(){
 
 #发布消息
 pubCaMu(){
-  createAccount $pubCaMuIDPre $subCaMuTopicSNum $subCaMuTopicENum "${intf}-${cIP}-pubCaMu"
+  pubCaMuAcc
   pubCaMuNoAcc
 }
 

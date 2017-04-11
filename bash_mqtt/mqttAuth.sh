@@ -2,6 +2,8 @@
 #auth:wuhongliang
 #date:2016-12-02
 #add mqtt usr passwd
+# ./mqttAuth.sh 1 65000 tsungPub tsungPub_whl
+# ssh root@192.168.10.99 "/home/zhilu/mosquitto/bash_mqtt/mqttAuth.sh 1 65000 tsungSub tsungSub_whl"
 sPath=`dirname $0`
 source $sPath/mqtt.conf
 accBegin=$1

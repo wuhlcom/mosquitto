@@ -51,9 +51,8 @@ mqttinfo(){
 	local srvPort=$2
   fi
   local ipPort="${srvIP}:${srvPort}"
-  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
+  process_num=`ps -ef | grep "mosquitto_sub"|grep -v grep|wc -l`
   session_num=`netstat -apnt |grep $ipPort|grep ESTABLISHED|wc -l`
-  process_num=`expr $process_num - 1`
   mqttinf="mqtt client process number: $process_num tcp session number: $session_num"
   echo ${mqttinf}
  }
@@ -73,8 +72,7 @@ subResult(){
   local ipPort="${srvIP}:${srvPort}"
   #session=`netstat -apnt |grep "$ip_port"|grep ESTABLISHED`
   local  session_num=`netstat -apnt |grep "${ipPort}"|grep ESTABLISHED|wc -l`
-  local  process_num=`ps -ef | grep "mosquitto_sub"|wc -l`
-  process_num=`expr $process_num - 1`
+  local  process_num=`ps -ef | grep "mosquitto_sub"|grep -v grep|wc -l`
   echo ${process_num}
   echo ${session_num}
  }
@@ -147,7 +145,7 @@ subProcess(){
   local fileName=$2
   local processFile="${path}/${fileName}_processes.log"
   :>$processFile
-  ps -ef | grep "mosquitto_sub" >> $processFile
+  ps -ef | grep "mosquitto_sub"|grep -v grep >> $processFile
 }
 
 #查询sub会话和进程，并将结果保存到文件中
@@ -168,7 +166,7 @@ subSession(){
   local ipPort="${srvIP}:${srvPort}"
   local sessionFile="${path}/${fileName}_sessions.log"
   :>$sessionFile
-  netstat -apnt |grep "$ipPort"|grep ESTABLISHED >> $sessionFile
+  netstat -apnt |grep "$ipPort"|grep ESTABLISHED|grep -v grep >> $sessionFile
 }
 
 #获取最新的文件名
@@ -296,7 +294,7 @@ monitorLog(){
 	while true
 	do
 	  writeMqttLog
-	  p_num=`ps -ef | grep mosquitto_sub|wc -l`
+	  p_num=`ps -ef | grep mosquitto_sub|grep -v grep|wc -l`
 	  s_num=`netstat -apnt |grep $srv_ip:$srv_port|grep ESTABLISHED|wc -l`
 	  if [ "$p_num" -eq 0 ] ||[ "$s_num" -eq 0 ]; then
 	    msg="mqtt client process num $p_num,session number $s_num,stop logger"

@@ -836,7 +836,7 @@ subCQuContinue(){
      sumSes=`expr $sumSes + $sesNum`				           
 	 if [ "${proNum}" -gt "${expect}" ];then 	
 	    msg="${ip}订阅数异常，预期订阅进程数为${expect}实际进程数为${proNum}" 
-		reportLog $reportPath $msg
+            reportLog $reportPath $msg
 	    return 1;
 	 fi
   done
@@ -1046,10 +1046,15 @@ subCReNoAccRemote(){
 queryMsgNum(){
         local reportPath=$1
 	local msg=$2
+	#保存消息的文件名
 	local fileName=$3
-        local msgNum=$4 
+	#消息数量
+        local msgNum=$4
+        #客户机数量 
 	local num=0
+	#消息总数量
         local sum=0
+	#预期消息数量
         expectNum=0
         local subMsgRs=""
         reportLog $reportPath $msg 
@@ -1322,7 +1327,6 @@ queryMsg(){
          break;
       fi
       sleep $waitForSession
-      
    done
 }
 
@@ -1346,11 +1350,10 @@ subCCaRemote(){
 subCCaNoAccRemote(){
   for ip in ${ip_array[*]}
   do
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCCaNoAccCMD"&
+    if [ "$ip" = "${localPcIP}" ];then continue;fi
+    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCCaNoAccCMD"&
   done
 }
-
 
 #远程发布,这里不需要改配置pub的起始序号，因为这里使用subcca中的序号
 pubCCaRemote(){
@@ -1375,12 +1378,12 @@ subCaConRemote(){
   local subnum=$2
   for ip in ${ip_array[*]}
   do
-        scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        local newStart=`expr $snum + $subnum \* $step`
-        ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaConSNum=${snum}/subCaConSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCaConCMD"&
-        ((step++))
+      scp ${sPath}/mqtt.conf $rootusr@${ip}:${remote_dir}
+      if [ "$ip" = "${localPcIP}" ];then continue;fi
+      local newStart=`expr $snum + $subnum \* $step`
+      ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaConSNum=${snum}/subCaConSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
+      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCaConCMD"&
+      ((step++))
   done
 }
 
@@ -1388,18 +1391,17 @@ subCaConRemote(){
 pubCaConAccRemote(){
   for ip in ${ip_array[*]}
   do
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConAccCMD"&
+      if [ "$ip" = "${localPcIP}" ];then continue;fi
+      ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConAccCMD"&
   done
-
 }
 
 #远程机器客户端发布消息
 pubCaConNoAccRemote(){
   for ip in ${ip_array[*]}
   do
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConNoAccCMD"&
+     if [ "$ip" = "${localPcIP}" ];then continue;fi
+     ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaConNoAccCMD"&
   done
 }
 
@@ -1429,8 +1431,6 @@ subCaMuRemote(){
             ssh -p $sshPort $rootusr@$ip "sed -i 's/pubCaMuMsgPre=${pubMsgPre}/pubCaMuMsgPre=${pubMsgPre}${step}/g' ${remote_dir}/mqtt.conf"
 	fi
 
-        # local newStart=`expr $snum + $subnum \* $step`
-        # ssh -p $sshPort $rootusr@$ip "sed -i 's/subCaMuTopicSNum=${snum}/subCaMuTopicSNum=${newStart}/g' ${remote_dir}/mqtt.conf"
         ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $subCaMuCMD"&
         ((step++))
   done
@@ -1440,18 +1440,17 @@ subCaMuRemote(){
 pubCaMuAccRemote(){
   for ip in ${ip_array[*]}
   do
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuAccCMD"&
+    if [ "$ip" = "${localPcIP}" ];then continue;fi
+    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuAccCMD"&
   done
-
 }
 
 #远程机器客户端发布消息
 pubCaMuNoAccRemote(){
   for ip in ${ip_array[*]}
   do
-        if [ "$ip" = "${localPcIP}" ];then continue;fi
-        ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuNoAccCMD"&
+    if [ "$ip" = "${localPcIP}" ];then continue;fi
+    ssh -p $sshPort $rootusr@$ip "${remote_mqttClient} $pubCaMuNoAccCMD"&
   done
 }
 

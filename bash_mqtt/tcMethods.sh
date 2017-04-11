@@ -120,9 +120,9 @@ subCContinue(){
        msg="====================订阅后第${k}次查询订阅情况======================="
        subCQuContinue $msg $reportPath $subCFName $subCNum 
        local rsSub=$?	 
-	   if [ "$rsSub" = "1" ];then 	     
-	     break; 
-	   fi
+       if [ "$rsSub" = "1" ];then 	     
+         break; 
+       fi
        #发布，发布后会自动断开订阅，此操作相当于取消订阅
        pubCNoAcc
        sleep $subCGap
@@ -595,7 +595,6 @@ subPubCaMu(){
   if [ -n "$ip_array" ];then
      length=${#ip_array[*]}
   fi
-
   #远程订阅
   if [ "$length" -ne "0" ];then
       subCaMuRemote $subCaMuTopicPre $subCaMuCIDPre $pubCaMuIDPre $pubCaMuMsgPre
@@ -631,18 +630,17 @@ subPubCaMu(){
   reportLog $subPubCaMuSessionLog $rs
   ####################################################################
 
-  #发布消息
+  #创建redis用户
   if [ "$length" -ne "0" ];then
     pubCaMuAccRemote
   fi
+  #创建redis用户
   pubCaMuAcc
   sleep $pubCaMuWait
 
   ######开始循环发布消息 
   while [ "$p" -le "$subPubCaMuTimes" ]
   do
-    #清除旧的消息
-    : > $recordsPath/$subCaMuRecieved
     if [ "$length" -ne "0" ];then
        ssh -p $sshPort $rootusr@$ip ": > ${remote_dir}/${subCaMuRecieved}"
     fi
@@ -656,7 +654,8 @@ subPubCaMu(){
 
     #查询结果
     local msg="=========第${p}次查询收到消息情况======="
-    queryMsgNum $subPubCaMuMsgLog $msg $subCaMuRecieved $expProNum
+    local expNum=`expr $expProNum \* $p`
+    queryMsgNum $subPubCaMuMsgLog $msg $subCaMuRecieved $expNum
     ((p++))
   done
 
